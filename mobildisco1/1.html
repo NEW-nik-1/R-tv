@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>RadioPotok.ru + VK Bridge</title>
+  <style>
+    body {
+      position: relative;
+      margin: 0;
+      padding: 20px;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('imagic/background.jpg');
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      -webkit-background-size: cover;
+      -moz-background-size: cover;
+      -o-background-size: cover;
+      background-size: cover;
+      z-index: -1;
+    }
+    .RP-SCRIPT {
+      width: 470px !important;
+      max-width: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    a.RP-LINK {
+      color: #0af;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="RP-SCRIPT" style="width:470px;" data-height="2" data-style="dark">
+    <a class="RP-LINK" href="https://radiopotok.ru/">ДИСКОТЕКА 20+ радио</a>
+  </div>
+
+  <!-- VK Bridge подключение -->
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+  <script>
+    vkBridge.send('VKWebAppInit')
+      .then(() => console.log('VK Bridge инициализирован'))
+      .catch(err => console.error('Ошибка инициализации VK Bridge:', err));
+  </script>
+
+  <!-- Скрипт радио-виджета -->
+  <script defer src="https://radiopotok.ru/f/script6/42d8184456ea0f21b49d1aeb35b28875285f02378b4ec71fdd8862c229d10e4f.js" charset="UTF-8"></script>
+</body>
+</html>
