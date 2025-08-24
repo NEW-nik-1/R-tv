@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IPTV, Radio, Games Player с VK Bridge</title>
+<style>
+  /* Reset и базовые стили */
+  * {
+    box-sizing: border-box;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    height: 100%;
+    overflow-y: hidden; /* УДАЛИТЬ вертикальный скролл */
+    font-family: Arial, sans-serif;
+    background: url('https://raw.githubusercontent.com/NEW-nik-1/test-game/refs/heads/main/images/4.jpg') repeat;
+  }
+  /* Шапка */
+  header {
+    background: linear-gradient(90deg, #222, #666, #999);
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    user-select: none;
+  }
+  header button {
+    position: relative;
+    background: linear-gradient(180deg, #666, #222);
+    border: 1px solid #444;
+    color: #ddd;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 8px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    box-shadow: none;
+  }
+  header button:hover:not(.active) {
+    background: linear-gradient(180deg, #777, #333);
+  }
+  header button.active {
+    background: linear-gradient(180deg, #ccc, #999);
+    color: #222;
+  }
+  /* Индикатор точки */
+  header button::after {
+    content: "";
+    position: absolute;
+    top: 9px;
+    right: 8px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #888;
+    transition: background-color 0.3s;
+  }
+  header button.active::after {
+    background: #6fae46;
+  }
+
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 0;
+  }
+
+  /* ТВ блок */
+  #tv-player {
+    width: 750px;
+    margin-top: 0;
+    user-select: none;
+  }
+  #tv-video {
+    width: 750px;
+    height: 422px; /* 16:9 */
+    background: black;
+    display: none;
+    outline: none;
+  }
+  #tv-channels {
+    margin-top: 2px;
+    width: 750px;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #333;
+    color: #ddd;
+    font-size: 16px;
+    line-height: 26px;
+    user-select: none;
+  }
+  #tv-channels::-webkit-scrollbar {
+    width: 8px;
+  }
+  #tv-channels::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 4px;
+  }
+  #tv-channels .channel {
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  #tv-channels .channel:hover,
+  #tv-channels .channel.active {
+    background: #777;
+    color: #222;
+  }
+  #tv-channels .section-title {
+    text-align: center;
+    font-weight: 800;
+    font-size: 18px;
+    color: #ddd;
+    margin: 6px 0 4px 0;
+    border: 2px solid #999;
+    border-radius: 8px;
+    padding: 2px 0;
+    user-select: none;
+  }
+
+  /* Радио блок */
+  #radio-player {
+    width: 750px;
+    margin-top: 0 40px 10px 0;
+    user-select: none;
+  }
+  #radio-audio {
+    width: 100%;
+    display: none;
+    outline: none;
+    background: transparent;
+  }
+  #radio-list {
+    margin-top: 6px;
+    max-height: 100px;
+    overflow-y: auto;
+    background: #333;
+    color: #ddd;
+    font-size: 16px;
+    line-height: 26px;
+    text-align: center;
+    user-select: none;
+  }
+  #radio-list::-webkit-scrollbar {
+    width: 8px;
+  }
+  #radio-list::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 4px;
+  }
+  #radio-list .radio-item {
+    padding: 6px 0;
+    cursor: pointer;
+  }
+  #radio-list .radio-item:hover,
+  #radio-list .radio-item.active {
+    background: #777;
+    color: #222;
+  }
+  
+  /* CHAT под радио */
+   #volnorez_chat {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+    margin-top: 10px;
+    width: 750px;
+    height: 350px;
+    user-select: none;
+    border: 1px solid #666;
+    border-radius: 6px;
+    background:  transparent !important;
+    overflow: hidden !important; /* УДАЛИТЬ любой скролл */
+  }
+
+
+  /* Игры */
+  #games-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    max-height: 600px;
+    background: #666;
+    border: 2px solid #444;
+    overflow-y: auto;
+    user-select: none;
+    color: #ccc;
+    font-size: 18px;
+    border-radius: 8px;
+    z-index: 1002;
+    display: none;
+  }
+  #games-overlay::-webkit-scrollbar {
+    width: 10px;
+  }
+  #games-overlay::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 5px;
+  }
+  #close-games {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 20px;
+    background: transparent;
+    border:none;
+    color:#ddd;
+    cursor:pointer;
+    user-select: none;
+  }
+  #games-list {
+    padding: 8px 10px;
+  }
+  #games-list .game-item {
+    padding: 10px 15px;
+    border: 1.5px solid #444;
+    margin-bottom: 8px;
+    color: #ddd;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    background: #444;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #games-list .game-item:hover {
+    background: #555;
+  }
+
+  /* Игровое окно */
+  #game-window {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #222;
+    width: 80vw;
+    height: 80vh;
+    display: none;
+    z-index: 1003;
+    border-radius: 8px;
+    user-select: none;
+    overflow: hidden;
+    flex-direction: column;
+    display: flex;
+  }
+  #game-frame {
+    flex-grow: 1;
+    border: none;
+    width: 100%;
+    height: 100%;
+    background: black;
+  }
+  #game-controls {
+    background: #333;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    padding: 0 12px;
+    color: #ddd;
+  }
+  #game-controls button {
+    font-size: 20px;
+    background: transparent;
+    border: none;
+    color: #ddd;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+  }
+  #game-controls button:hover {
+    color: #aaa;
+  }
+  #game-window.minimized {
+    bottom: 0;
+    top: auto;
+    height: 100px;
+    width: 300px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 8px 8px 0 0;
+    flex-direction: row;
+  }
+  #game-window.minimized #game-frame {
+    display: none;
+  }
+  #game-window.minimized #game-controls {
+    justify-content: center;
+  }
+
+  /* Мелкий шрифт внизу слева*/
+  #footer-text {
+    position: fixed;
+    bottom: 4px;
+    left: 8px;
+    font-size: 10px;
+    color: #ccc;
+    user-select: none;
+    font-family: monospace;
+    z-index: 2000;
+  }
+</style>
+</head>
+<body>
+<header>
+  <button id="btn-tv" aria-pressed="false" type="button" title="ТВ">ТВ</button>
+  <button id="btn-radio" aria-pressed="false" type="button" title="РАДИО">РАДИО</button>
+  <button id="btn-games" aria-pressed="false" type="button" title="ИГРЫ">ИГРЫ</button>
+</header>
+
+<main>
+  <!-- ТВ -->
+  <section id="tv-player" aria-label="Телевизионный плеер">
+    <video id="tv-video" playsinline controls muted crossorigin="anonymous" preload="none"></video>
+    <div id="tv-channels" aria-live="polite" role="listbox" tabindex="0"></div>
+  </section>
+
+  <!-- Радио -->
+  <section id="radio-player" aria-label="Радиоплеер">
+    <audio id="radio-audio" controls preload="none"></audio>
+    <div id="radio-list" role="listbox" tabindex="0"></div>
+    <div id="volnorez_chat" style="width:750px; height:400px; overflow-y:auto;"
+     data-code="001f4811"
+     data-skin-params="'panel_clr':'213,213,213','ib_clr':'245,245,245','msgbg_clr':'234,234,234','omsgbg_clr':'225,225,225','icon_clr':'150,150,150','dj_clr':'72,191,53'"
+     data-skin="skin_3">
+  <script async type="text/javascript" src="//volnorez.com/plugins/jscode/chat_js"></script>
+</div>
+
+
+  </section>
+</main>
+
+<!-- Игры -->
+<div id="games-overlay" role="dialog" aria-modal="true" aria-label="Список игр">
+  <button id="close-games" aria-label="Закрыть список игр">✖</button>
+  <div id="games-list"></div>
+</div>
+
+<!-- Игровое окно -->
+<div id="game-window" aria-label="Игровое окно" role="region" tabindex="-1" aria-hidden="true">
+  <div id="game-controls">
+    <button id="btn-minimize" title="Опустить окно ▼" aria-label="Опустить окно">▽</button>
+    <button id="btn-maximize" title="Развернуть окно ▲" aria-label="Развернуть окно" style="display:none;">△</button>
+    <button id="btn-volume-hint" title="Отключение звука в настройках игры" aria-label="Отключение звука">?</button>
+    <button id="btn-fullscreen" title="Полноэкранный режим" aria-label="Полноэкранный режим">❏</button>
+    <button id="btn-windowed" title="Вернуть исходное окно" aria-label="Вернуть исходное окно" style="display:none;">❏</button>
+    <button id="btn-close-game" title="Закрыть игру" aria-label="Закрыть игру">✖</button>
+  </div>
+  <iframe id="game-frame" src="" frameborder="0" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-modals"></iframe>
+</div>
+
+<div id="footer-text">Проект сделан, придуман MUZER play </div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.1/dist/hls.min.js"></script>
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+(async () => {
+  try {
+    await vkBridge.send('VKWebAppInit');
+  } catch(e) { /* VK Bridge может быть недоступен вне VK Mini Apps */ }
+})();
+
+const btnTV = document.getElementById('btn-tv');
+const btnRadio = document.getElementById('btn-radio');
+const btnGames = document.getElementById('btn-games');
+
+const tvPlayerSection = document.getElementById('tv-player');
+const tvVideo = document.getElementById('tv-video');
+const tvChannels = document.getElementById('tv-channels');
+
+const radioPlayerSection = document.getElementById('radio-player');
+const radioAudio = document.getElementById('radio-audio');
+const radioList = document.getElementById('radio-list');
+
+const gamesOverlay = document.getElementById('games-overlay');
+const gamesList = document.getElementById('games-list');
+const btnCloseGames = document.getElementById('close-games');
+
+const gameWindow = document.getElementById('game-window');
+const gameFrame = document.getElementById('game-frame');
+const btnMinimize = document.getElementById('btn-minimize');
+const btnMaximize = document.getElementById('btn-maximize');
+const btnVolumeHint = document.getElementById('btn-volume-hint');
+const btnFullscreen = document.getElementById('btn-fullscreen');
+const btnWindowed = document.getElementById('btn-windowed');
+const btnCloseGame = document.getElementById('btn-close-game');
+
+const tvChannelsData = [
+  { section: "_🎵_ МУЗЫКА _🎵_" },
+    { name: "RUTV Music", url: "https://hls-03-video.webcaramba.com/rutv/live_480/index.m3u8" },
+    { name: "Шансон ТВ", url: "https://hls-shansontv.cdnvideo.ru/shansontv/shansontv-sd.smil/playlist.m3u8" },
+    { name: "QmusicNL", url: "https://dpp-qmusicnl-live.akamaized.net/streamx/QmusicNL.m3u8" },
+    { name: "Company TV", url: "https://company.fluid.stream/CompanyTV/smil:Company_ALL.smil/playlist_slita.m3u8" },
+    { name: "TNT", url: "https://tntmsmotr.mediacdn.ru/cdn/smotr/playlist_hdhigh.m3u8" },
+    { name: "KroneHit", url: "https://bitcdn-kronehit.bitmovin.com/v2/hls/chunklist_b3128000.m3u8" },
+    { name: "V2Beat", url: "https://de1se01.v2beat.live/playlist.m3u8" },
+    { name: "Retro tv", url: "https://stream.mediawork.cz/retrotv/retrotvHQ1/playlist.m3u8" },
+    { section: "_🎬_ КИНО _🎬_" },
+    { name: "TV 3", url: "https://zabava-htlive.cdn.ngenix.net/hls/CH_TV3/variant.m3u8" },
+    { name: "Kino24Ru Sirius", url: "https://sirius.greenhosting.ru/Kino24Ru/video.m3u8" },
+    { name: "Astrakhan24", url: "https://streaming.astrakhan.ru/astrakhan24/playlist.m3u8" },
+    { name: "EniseyTV", url: "https://hls-eniseytv.cdnvideo.ru/eniseytv/stream1/playlist.m3u8" },
+    { name: "SvoeTV", url: "https://svoetv.mediacdn.ru/cdn/svoetv/playlist_hdhigh.m3u8" },
+    { name: "Кино сборник", url: "https://132544.edgevideo.ru/streams/132544_847220/1325441080/index.m3u8" },
+    { name: "China TV 2", url: "https://cdn.nexttvnet.ru/hlsl/provide/61394/ChinaTV2/china-tv_1920x1080/index.m3u8" },
+];
+
+const radioChannelsData = [
+    { name: "Music Club Золушка радио", url: "https://stream.volnorez.com/live-app/908925?br=128" },
+    { name: "Дорожное радио", url: "https://dorognoe.hostingradio.ru/radio" },
+    { name: "Радио СИТИ", url: "https://online2.100i6fm.ru/city" },
+    { name: "Авторадио", url: "https://pub0101.101.ru/stream/air/aac/64/100" },
+    { name: "Радио Рекорд", url: "https://radiorecord.hostingradio.ru/rr_main96.aacp" },
+    { name: "Новое радио", url: "https://stream.newradio.ru/novoe96.aacp" },
+    { name: "Ретро ФМ", url: "https://retro.hostingradio.ru:8043/retro256.mp3" },
+    { name: "Радио Energy", url: "https://pub0202.101.ru:8443/stream/air/aac/64/99" },
+    { name: "Европа плюс", url: "https://ep256.hostingradio.ru:8052/europaplus256.mp3" },
+    { name: "Наше радио", url: "https://nashe1.hostingradio.ru/nashe-256" },
+    { name: "BEST DEEP FM", url: "https://myradio24.org/5129" },
+    { name: "Русское радио", url: "https://rusradio.hostingradio.ru/rusradio96.aacp" },
+    { name: "Маруся ФМ", url: "https://radio-holding.ru:9433/marusya_default" },
+    { name: "Ретро Хит", url: "https://retro.amgradio.ru/Retro?r_bells" },
+    { name: "Donat FM Шансон", url: "https://c6.radioboss.fm:18096/stream" },
+    { name: "Шансон Радио", url: "https://listen7.myradio24.com/75853" },
+    { name: "Extreme Deep House Radio", url: "https://whsh4u-panel.com/proxy/yfryujzw?mp=/stream" },
+    { name: "Русская Волна", url: "https://ru.amgradio.ru/RuWave48?r_bells" },
+    { name: "Радио Советская эстрада", url: "https://evcast.mediacp.eu:2075/stream" },
+    { name: "Retro FM (Латвия)", url: "https://live.retrofm.lv/retrofmlatvia" },
+    { name: "Юмор FM", url: "https://pub0302.101.ru:8443/stream/air/aac/64/102" },
+    { name: "Record Megamix", url: "https://radiorecord.hostingradio.ru/mix96.aacp" },
+    { name: "Радио Любимые хиты", url: "https://myradio24.org/78185" },
+    { name: "Мурка FM", url: "https://murka.amgradio.ru/MurkaFM?r_bells" },
+    { name: "Relax FM Chillout", url: "https://pub0302.101.ru:8000/stream/trust/mp3/128/24?" },
+    { name: "Nu Euphoria Trance Radio", url: "https://radiopotok2.online/http://radio.nueuphoria.com:8000/live" },
+    { name: "Ночное такси", url: "https://radiont.shansonspb.ru:1040/stream" },
+    { name: "Родные Песни", url: "https://rodpesni.amgradio.ru/rp?r_bells" },
+    { name: "Радио Движуха", url: "https://myradio24.org/78805" },
+    { name: "Дискотека 80-90", url: "https://myradio24.org/dance80" },
+    { name: "Remix FM", url: "https://rmx.amgradio.ru/RemixFM?r_bells" },
+    { name: "Хит FM 90е", url: "https://hitfm-hit1990.hostingradio.ru/hit199096.aacp" },
+    { name: "DFM Дискач 90-ых", url: "https://dfm-disc90.hostingradio.ru/disc9096.aacp" },
+    { name: "Авторадио Дискотека 90-х", url: "https://pub0101.101.ru/stream/pro/aac/64/74?" },
+    { name: "90s Eurodance", url: "https://listen1.myradio24.com/5967" },
+    { name: "PRO Dj Radio", url: "https://live.prodjradio.net:8065/radio" },
+    { name: "Radio Danz", url: "https://streamssl.radiodanz.com/live" },
+    { name: "Радио Кавказ-Хит", url: "https://kavkazhit.hostingradio.ru:8017/kavkazhit96.mp3" },
+    { name: "Радио Бобина", url: "https://bobina.su" },
+    { name: "Авторадио Дискотека 80-х", url: "https://pub0101.101.ru/stream/pro/aac/64/1?" },
+    { name: "Дискотека 90-ых", url: "https://pub0302.101.ru:8443/stream/pro/aac/64/74" },
+    { name: "Russian Dance", url: "https://pub0302.101.ru:8443/stream/trust/mp3/128/17" },
+    { name: "Хит FM Стопудовый Хит", url: "https://hitfm-hit100pud.hostingradio.ru/hit100pud96.aacp" },
+    { name: "Record Russian Gold", url: "https://radiorecord.hostingradio.ru/russiangold96.aacp" },
+    { name: "Супердискотека 90-х", url: "https://radiorecord.hostingradio.ru/sd9096.aacp" },
+    { name: "Русский шансон 24", url: "https://stream.vyshka24.ru/russhanson24" },
+    { name: "Радио Калина Красная", url: "https://icecast-studio21.cdnvideo.ru/KalynaK_1a" },
+    { name: "Милицейская волна", url: "https://radiomv.hostingradio.ru:80/radiomv128.mp3" },
+    { name: "Джем FM", url: "https://online2.jamfm.ru/jam_aacplus" },
+    { name: "Радио Музыкальный рай", url: "https://listen7.myradio24.com/96203" },
+    { name: "Record Eurodance", url: "https://radiorecord.hostingradio.ru/eurodance96.aacp" },
+    { name: "Россия 90-ых", url: "https://pub0102.101.ru:8443/stream/pro/aac/64/33" },
+    { name: "Sector Geny / 80s", url: "https://radiopotok2.online/http://89.223.45.5:8000/geny-160" },
+    { name: "Авторадио Дискотека СССР", url: "https://pub0302.101.ru:8000/stream/pro/aac/64/144?" },
+    { name: "Диско-радио SOVA", url: "https://evcast.mediacp.eu:1965/stream" },
+];
+
+const gamesData = [
+    { name: "Gary's World", url: "https://html5.gamemonetize.co/dd5rs8etri5hw51g32sk69qfdoov5tq2/" },
+    { name: "Crazy Ball Adventures", url: "https://www.onlinegames.io/games/2021/unity2/crazy-ball-adventures/index.html" },
+    { name: "Subway Horror Chapter 1", url: "https://www.gamenora.com/embed/subway-horror-chapter-1" },
+    { name: "A Difficult Game About Climbing", url: "https://www.gamenora.com/embed/a-difficult-game-about-climbing" },
+    { name: "Cross The Road", url: "https://www.onlinegames.io/games/2023/unity/cross-the-road/index.html" },
+    { name: "Motorcycle Racer", url: "https://s3.eponesh.com/games/8866/" },
+    { name: "Moto Rider GO", url: "https://app-165758.games.s3.yandex.net/165758/ghtg4xyuxt09og6gtji0jcl6aw8el4w4/index.html" },
+    { name: "Motorbike Traffic", url: "https://www.onlinegames.io/games/2021/unity/motorbike-traffic/index.html" },
+    { name: "Turbo Moto Racer 3D", url: "https://www.gamenora.com/splash/turbo-moto-racer-3d/" },
+    { name: "ATV Highway Traffic", url: "https://www.onlinegames.io/games/2021/unity/atv-highway-traffic/index.html" },
+    { name: "Traffic Tour", url: "https://traffictour.github.io/traffic-tour/" },
+];
+
+//--- Инициализация списков ---
+function populateTVChannels() {
+  tvChannels.innerHTML = "";
+  tvChannelsData.forEach(item => {
+    if(item.section) {
+      const div = document.createElement('div');
+      div.className = 'section-title';
+      div.textContent = item.section;
+      tvChannels.appendChild(div);
+    } else {
+      const div = document.createElement('div');
+      div.className = 'channel';
+      div.tabIndex = 0;
+      div.textContent = item.name;
+      div.dataset.url = item.url;
+      tvChannels.appendChild(div);
+    }
+  });
+}
+function populateRadioList() {
+  radioList.innerHTML = "";
+  radioChannelsData.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'radio-item';
+    div.tabIndex = 0;
+    div.textContent = item.name;
+    div.dataset.url = item.url;
+    radioList.appendChild(div);
+  });
+}
+function populateGamesList() {
+  gamesList.innerHTML = "";
+  gamesData.forEach(game => {
+    const div = document.createElement('div');
+    div.className = 'game-item';
+    div.title = game.name;
+    div.textContent = game.name;
+    div.dataset.url = game.url;
+    gamesList.appendChild(div);
+  });
+}
+
+//--- Плееры ---
+let currentTVUrl = null;
+let hls = null;
+let currentRadioUrl = null;
+
+function playTV(url) {
+  if (!url) return;
+  if (hls) {
+    hls.destroy();
+    hls = null;
+  }
+  if (tvVideo.canPlayType('application/vnd.apple.mpegurl')) {
+    tvVideo.src = url;
+    tvVideo.muted = false;
+    tvVideo.play().catch(() => {});
+  } else if (Hls.isSupported()) {
+    hls = new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(tvVideo);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      tvVideo.muted = false;
+      tvVideo.play().catch(() => {});
+    });
+  } else {
+    tvVideo.src = url;
+    tvVideo.muted = false;
+    tvVideo.play().catch(() => {});
+  }
+  tvVideo.style.display = 'block';
+}
+function playRadio(url) {
+  if (!url) return;
+  radioAudio.src = url;
+  radioAudio.load();
+  radioAudio.play().catch(() => {});
+  radioAudio.style.display = 'block';
+}
+function setActiveTVChannel(el) {
+  if (!el || !el.dataset || !el.dataset.url) return;
+  if (currentTVUrl === el.dataset.url) return;
+  currentTVUrl = el.dataset.url;
+  Array.from(tvChannels.children).forEach(ch => ch.classList.remove('active'));
+  el.classList.add('active');
+  playTV(currentTVUrl);
+}
+function setActiveRadioChannel(el) {
+  if (!el || !el.dataset || !el.dataset.url) return;
+  if (currentRadioUrl === el.dataset.url) return;
+  currentRadioUrl = el.dataset.url;
+  Array.from(radioList.children).forEach(r => r.classList.remove('active'));
+  el.classList.add('active');
+  playRadio(currentRadioUrl);
+}
+
+//--- Активировать ТВ ---
+function activateTV() {
+  btnTV.classList.add('active');
+  btnTV.setAttribute('aria-pressed', 'true');
+  btnRadio.classList.remove('active');
+  btnRadio.setAttribute('aria-pressed', 'false');
+  btnGames.classList.remove('active');
+  btnGames.setAttribute('aria-pressed', 'false');
+  closeGames();
+  closeGame();
+
+  tvPlayerSection.style.display = 'block';
+  radioPlayerSection.style.display = 'none';
+
+  if (!currentTVUrl) {
+    let firstChannel = Array.from(tvChannels.children).find(ch => ch.dataset?.url);
+    if (firstChannel) setActiveTVChannel(firstChannel);
+  } else {
+    playTV(currentTVUrl);
+  }
+
+  radioAudio.pause();
+  radioAudio.src = "";
+  radioAudio.style.display = 'none';
+}
+//--- Активировать Радио ---
+function activateRadio() {
+  btnRadio.classList.add('active');
+  btnRadio.setAttribute('aria-pressed', 'true');
+  btnTV.classList.remove('active');
+  btnTV.setAttribute('aria-pressed', 'false');
+  btnGames.classList.remove('active');
+  btnGames.setAttribute('aria-pressed', 'false');
+  closeGames();
+  closeGame();
+
+  radioPlayerSection.style.display = 'block';
+  tvPlayerSection.style.display = 'none';
+
+  tvVideo.pause();
+  tvVideo.src = "";
+  if(hls) {
+    hls.destroy();
+    hls = null;
+  }
+  currentTVUrl = null;
+
+  if(!currentRadioUrl) {
+    let firstRadio = radioList.children[0];
+    if(firstRadio) setActiveRadioChannel(firstRadio);
+  }
+  else playRadio(currentRadioUrl);
+}
+//--- Активировать Игры ---
+function activateGames() {
+  btnGames.classList.add('active');
+  btnGames.setAttribute('aria-pressed', 'true');
+  btnRadio.classList.remove('active');
+  btnRadio.setAttribute('aria-pressed', 'false');
+  btnTV.classList.remove('active');
+  btnTV.setAttribute('aria-pressed', 'false');
+  openGames();
+}
+//--- Игры открыть ---
+function openGames() {
+  gamesOverlay.style.display = 'block';
+  gamesOverlay.focus();
+}
+//--- Игры закрыть ---
+function closeGames() {
+  gamesOverlay.style.display = 'none';
+  btnGames.classList.remove('active');
+  btnGames.setAttribute('aria-pressed', 'false');
+}
+//--- Запустить игру ---
+function openGame(url) {
+  if (!url) return;
+  gameFrame.src = url;
+  gameWindow.style.display = 'flex';
+  gameWindow.setAttribute('aria-hidden', 'false');
+  gameWindow.classList.remove('minimized');
+  btnMinimize.style.display = "";
+  btnMaximize.style.display = "none";
+  btnFullscreen.style.display = "";
+  btnWindowed.style.display = "none";
+  gameWindow.focus();
+}
+//--- Закрыть игру ---
+function closeGame() {
+  gameWindow.style.display = 'none';
+  gameWindow.setAttribute('aria-hidden', 'true');
+  gameFrame.src = "";
+}
+//--- Минимизировать окно игры ---
+function minimizeGame() {
+  gameWindow.classList.add('minimized');
+  btnMinimize.style.display = "none";
+  btnMaximize.style.display = "";
+}
+//--- Развернуть окно игры ---
+function maximizeGame() {
+  gameWindow.classList.remove('minimized');
+  btnMaximize.style.display = "none";
+  btnMinimize.style.display = "";
+}
+//--- Полноэкранный режим ---
+function fullscreenGame() {
+  if (gameWindow.requestFullscreen) {
+    gameWindow.requestFullscreen();
+  } else if (gameWindow.webkitRequestFullscreen) {
+    gameWindow.webkitRequestFullscreen();
+  } else if (gameWindow.msRequestFullscreen) {
+    gameWindow.msRequestFullscreen();
+  }
+  btnFullscreen.style.display = "none";
+  btnWindowed.style.display = "";
+}
+//--- Выйти из полноэкранного ---
+function windowedGame() {
+  if (document.exitFullscreen) {
+    document.exitFullscreen();
+  } else if (document.webkitExitFullscreen) {
+    document.webkitExitFullscreen();
+  } else if (document.msExitFullscreen) {
+    document.msExitFullscreen();
+  }
+  btnWindowed.style.display = "none";
+  btnFullscreen.style.display = "";
+}
+
+btnTV.addEventListener('click', activateTV);
+btnRadio.addEventListener('click', activateRadio);
+btnGames.addEventListener('click', () => {
+  if (gamesOverlay.style.display === 'block') {
+    closeGames();
+  } else {
+    activateGames();
+  }
+});
+btnCloseGames.addEventListener('click', closeGames);
+
+tvChannels.addEventListener('click', e => {
+  if(e.target.classList.contains('channel')) {
+    setActiveTVChannel(e.target);
+  }
+});
+tvChannels.addEventListener('keydown', e => {
+  if((e.key === "Enter" || e.key === " ") && e.target.classList.contains('channel')) {
+    setActiveTVChannel(e.target);
+    e.preventDefault();
+  }
+});
+
+radioList.addEventListener('click', e => {
+  if(e.target.classList.contains('radio-item')) {
+    setActiveRadioChannel(e.target);
+  }
+});
+radioList.addEventListener('keydown', e => {
+  if((e.key === "Enter" || e.key === " ") && e.target.classList.contains('radio-item')) {
+    setActiveRadioChannel(e.target);
+    e.preventDefault();
+  }
+});
+
+gamesList.addEventListener('click', e => {
+  if(e.target.classList.contains('game-item')) {
+    openGame(e.target.dataset.url);
+    closeGames();
+  }
+});
+gamesList.addEventListener('keydown', e => {
+  if((e.key === "Enter" || e.key === " ") && e.target.classList.contains('game-item')) {
+    openGame(e.target.dataset.url);
+    closeGames();
+    e.preventDefault();
+  }
+});
+
+btnCloseGame.addEventListener('click', closeGame);
+btnMinimize.addEventListener('click', minimizeGame);
+btnMaximize.addEventListener('click', maximizeGame);
+btnFullscreen.addEventListener('click', fullscreenGame);
+btnWindowed.addEventListener('click', windowedGame);
+btnVolumeHint.addEventListener('click', () => {
+  alert('Отключение звука в настройках запущенной игре.');
+});
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    btnWindowed.style.display = 'none';
+    btnFullscreen.style.display = '';
+  }
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement) {
+    btnWindowed.style.display = 'none';
+    btnFullscreen.style.display = '';
+  }
+});
+document.addEventListener('msfullscreenchange', () => {
+  if (!document.msFullscreenElement) {
+    btnWindowed.style.display = 'none';
+    btnFullscreen.style.display = '';
+  }
+});
+
+populateTVChannels();
+populateRadioList();
+populateGamesList();
+activateRadio();
+</script>
+</body>
+</html>
