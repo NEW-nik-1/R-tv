@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Поймай радио волну</title>
+<style>
+  body { 
+    background: url('background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color:white; 
+    font-family:'Arial', sans-serif; 
+    margin:0; 
+    overflow:hidden; 
+    text-align:center;
+  }
+  h1 {
+    margin:20px 0 10px 0;
+    font-size:28px;
+    color:yellow;
+    text-shadow: 2px 2px 5px black;
+  }
+  #container { 
+    width:600px; 
+    margin:0 auto 20px auto; 
+    border:2px solid #444; 
+    height:500px; 
+    overflow:hidden; 
+    position:relative; 
+    background: rgba(0,0,0,0.5);
+    border-radius:10px;
+  }
+  ul { list-style:none; margin:0; padding:0; }
+  li { 
+    padding:10px; 
+    font-size:20px; 
+    border-bottom:1px solid #333; 
+    text-align:left; 
+    padding-left:80px; 
+    font-weight:500; 
+    letter-spacing:1px; 
+    transition: color 0.3s, transform 0.3s;
+  }
+  .highlight { background:#222; }
+  #arrow{
+    position:absolute; 
+    left:10px; 
+    width:0; 
+    height:0;
+    border-top:15px solid transparent;
+    border-bottom:15px solid transparent;
+    border-left:25px solid yellow; 
+    top:40px;
+    z-index:10;
+  }
+  #volumeIcon{
+    position:absolute;
+    left:40px; 
+    width:20px;
+    height:20px;
+    font-size:20px;
+    cursor:pointer;
+    top:40px;
+    z-index:11;
+  }
+  @keyframes pulse {
+    0% { color: yellow; transform: scale(1); }
+    50% { color: orange; transform: scale(1.05); }
+    100% { color: yellow; transform: scale(1); }
+  }
+  .playing { animation: pulse 1s infinite; font-weight: bold; }
+  #instructionBtn {
+    position:fixed; top:20px; right:20px;
+    padding:10px 15px; font-size:16px;
+    background:yellow; color:black; border:none;
+    border-radius:5px; cursor:pointer; z-index:100;
+  }
+  #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:200; justify-content:center; align-items:center; }
+  #modalContent {
+    background:#222; padding:20px 30px; color:white; border-radius:10px;
+    max-width:400px; text-align:left; position:relative;
+  }
+  #closeModal {
+    position:absolute; top:10px; right:10px;
+    padding:5px 10px; cursor:pointer; background:yellow;
+    color:black; border:none; border-radius:5px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Поймай радио волну</h1>
+<button id="instructionBtn">Инструкция</button>
+
+<div id="container">
+  <div id="arrow"></div>
+  <div id="volumeIcon">🔇</div>
+  <ul id="list">
+  <li data-stream="https://ep256.hostingradio.ru:8052/europaplus256.mp3">1. Европа плюс</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/rr_main96.aacp">2. Радио Рекорд</li>
+  <li data-stream="https://nashe1.hostingradio.ru/nashe-256">3. Наше радио</li>
+  <li data-stream="https://pub0101.101.ru/stream/air/aac/64/100">4. Авторадио</li>
+  <li data-stream="https://pub0202.101.ru:8443/stream/air/aac/64/99">5. Радио Energy</li>
+  <li data-stream="https://radiopotok2.online/http://online.kissfm.ua/KissFM_HD">6. Kiss FM</li>
+  <li data-stream="https://retro.hostingradio.ru:8043/retro256.mp3">7. Ретро ФМ</li>
+  <li data-stream="https://rusradio.hostingradio.ru/rusradio96.aacp">8. Русское радио</li>
+  <li data-stream="https://dorognoe.hostingradio.ru/radio">9. Дорожное радио</li>
+  <li data-stream="https://stream.newradio.ru/novoe96.aacp">10. Новое радио</li>
+  <li data-stream="https://hr.amgradio.ru/Horoshee?r_bells">11. Хорошее радио</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/deep96.aacp">12. Record Deep</li>
+  <li data-stream="https://retro.amgradio.ru/Retro?r_bells">13. Ретро Хит</li>
+  <li data-stream="https://dfm-dfmdeep.hostingradio.ru/dfmdeep96.aacp">14. DFM Deep</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/trancehits96.aacp">15. Record Trance Hits</li>
+  <li data-stream="https://cafe.amgradio.ru/Cafe?r_bells">16. Radio Cafe</li>
+  <li data-stream="https://rock.amgradio.ru/RusRock?r_bells">17. Русский Рок</li>
+  <li data-stream="https://pub0302.101.ru:8443/stream/air/aac/64/102">18. Юмор FM</li>
+  <li data-stream="https://radiopotok2.online/http://fr1.1mix.co.uk:8060/320">19. 1Mix Trance</li>
+  <li data-stream="https://hitfm.hostingradio.ru/hitfm96.aacp">20. Хит FM</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/sd9096.aacp">21. Супердискотека 90-х</li>
+  <li data-stream="https://stream.audiodiz.ru/listen/light/radio">22. Лёгкое Радио</li>
+  <li data-stream="https://pub0201.101.ru/stream/trust/mp3/128/19?">23. NRJ Trance</li>
+  <li data-stream="https://murka.amgradio.ru/MurkaFM?r_bells">24. Мурка FM</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/rmx96.aacp">25. Record Remix</li>
+  <li data-stream="https://pub0302.101.ru:8000/stream/pro/aac/64/144?">26. Авторадио Дискотека СССР</li>
+  <li data-stream="https://listen7.myradio24.com/alexx333">27. Ностальжи Россия</li>
+  <li data-stream="https://pub0201.101.ru/stream/pro/aac/64/42?">28. Авторадио Русский рок</li>
+  <li data-stream="https://dfm-dancegold10.hostingradio.ru/dancegold1096.aacp">29. DFM Dance Gold 2010s</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/chillhouse96.aacp">30. Record Chill House</li>
+  <li data-stream="https://hitfm-hit2000.hostingradio.ru/hit200096.aacp">31. Хит FM Хит 2000-х</li>
+  <li data-stream="https://my.radioprocessor.com:8100/hit80x-192.mp3">32. Радио Хиты 80х</li>
+  <li data-stream="https://radiopotok2.online/http://radio.rudeep.ru:8000/stream">33. Russian Deep Radio</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/vip96.aacp">34. Record Vip House</li>
+  <li data-stream="https://listen1.myradio24.com/5967">35. 90s Eurodance</li>
+  <li data-stream="https://c6.radioboss.fm/stream/97">36. Donat FM Русский рок</li>
+  <li data-stream="https://radiopotok2.online/http://radio.nueuphoria.com:8000/live">37. Nu Euphoria Trance Radio</li>
+  <li data-stream="https://dfm-dancegold90.hostingradio.ru/dancegold9096.aacp">38. DFM Dance Gold 1990s</li>
+  <li data-stream="https://c6.radioboss.fm:18089/stream">39. Donat FM Зарубежные хиты</li>
+  <li data-stream="https://radio.promodj.com/deep-192">40. PromoDJ Deep</li>
+  <li data-stream="https://stream.vyshka24.ru/russhanson24">41. Русский шансон 24</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/mix96.aacp">42. Record Megamix</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/mdl96.aacp">43. Медляк FM</li>
+  <li data-stream="https://radio.promodj.com/fullmoon-192">44. PromoDJ Full Moon</li>
+  <li data-stream="https://retroclub.hostingradio.ru/retroclub224.aacp">45. Радио Ретроклуб</li>
+  <li data-stream="https://myradio24.org/74828">46. Радио Ночной звонок</li>
+  <li data-stream="https://stream.vyshka24.ru/wowhiphop">47. Wow Music Hip-Hop</li>
+  <li data-stream="https://pub0102.101.ru:8443/stream/trust/mp3/128/266?">48. Relax FM Музыка для прогулок</li>
+  <li data-stream="https://stream1.radiord.ru:8000/live128.aac">49. Радио Родных Дорог</li>
+  <li data-stream="https://tapehits.com:8005/stream">50. Радио Tape Hits</li>
+  <li data-stream="https://pub0102.101.ru:8443/stream/pro/aac/64/33">51. Россия 90-ых</li>
+  <li data-stream="https://rusongs.amgradio.ru/rusongs?r_bells">52. Русские песни</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/tiesto96.aacp">53. Record Tiesto</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/198096.aacp">54. Record 80-х</li>
+  <li data-stream="https://abs.zaycev.fm/club256k">55. Зайцев FM Club</li>
+  <li data-stream="https://broadcast.miami/proxy/thediscoplanet?mp=/stream/">56. The Disco Planet Radio</li>
+  <li data-stream="https://radiont.shansonspb.ru:1040/stream">57. Ночное такси</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/summerlounge96.aacp">58. Record Summer Lounge</li>
+  <li data-stream="https://rr-00.hostingradio.ru/rr0096.aacp">59. Русское Радио Родные нулевые</li>
+  <li data-stream="https://live.retrofm.lv/retrofmlatvia">60. Retro FM</li>
+  <li data-stream="https://abs.zaycev.fm/rock256k">61. Зайцев FM New Rock</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/guetta96.aacp">62. Record David Guetta</li>
+  <li data-stream="https://jfm1.hostingradio.ru:14536/metal.mp3">63. Rock FM: Heavy</li>
+  <li data-stream="https://dfm-popgold90.hostingradio.ru/popgold9096.aacp">64. DFM Pop Gold 1990s</li>
+  <li data-stream="https://stream.mixadance.fm/mixadance">65. MixaDance FM</li>
+  <li data-stream="https://radio.promodj.com/top100-192">66. PromoDJ Top100</li>
+  <li data-stream="https://pub0201.101.ru/stream/trust/mp3/128/17?">67. Юмор FM Танцуют все!</li>
+  <li data-stream="https://hitfm-hit1990.hostingradio.ru/hit199096.aacp">68. Хит FM Хит 90-х</li>
+  <li data-stream="https://pub0202.101.ru:8443/stream/pro/aac/64/160?">69. Авторадио Зарубежный рок</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/russiangold96.aacp">70. Record Russian Gold</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/gold96.aacp">71. Record Gold</li>
+  <li data-stream="https://icecast-radioclassica.cdnvideo.ru/radioclassica">72. Популярная Классика FM</li>
+  <li data-stream="https://pub0201.101.ru:8443/stream/trust/mp3/128/470?">73. Relax FM Музыка для вечера</li>
+  <li data-stream="https://radiopotok2.online/http://89.223.45.5:8000/geny-160">74. Sector Geny / 80s</li>
+  <li data-stream="https://tntradio.hostingradio.ru:8027/hhr128.mp3?radiostatistica=radiobells">75. HIP HOP RADIO</li>
+  <li data-stream="https://radiopotok2.online/http://live.legendy.by:8000/legendyfm">76. Легенды FM</li>
+  <li data-stream="https://rr-zolotoigrammofon.hostingradio.ru/zolotoigrammofon96.aacp">77. Русское радио Золотой граммофон</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/househits96.aacp">78. Record House Hits</li>
+  <li data-stream="https://radiopotok2.online/http://cast.brg.ua/djfm_main_public_mp3_hq">79. DJ FM</li>
+  <li data-stream="https://radiopotok2.online/http://79.120.77.11:8000/rapru">80. Radio Caprice Russian Rap</li>
+  <li data-stream="https://pub0302.101.ru:8443/stream/trust/mp3/128/17">81. Russian Dance</li>
+  <li data-stream="https://rmx.amgradio.ru/RemixFM?r_bells">82. Remix FM</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/rap96.aacp">83. Record Rap</li>
+  <li data-stream="https://play.sas-media.ru/play_256">84. Noise FM</li>
+  <li data-stream="https://abs.zaycev.fm/disco256k">85. Зайцев FM DISCO</li>
+  <li data-stream="https://pub0201.101.ru/stream/trust/mp3/128/466?">86. Relax FM Christmas</li>
+  <li data-stream="https://stream.cassiopeia-station.ru:1135/stream">87. Dancing Fox</li>
+  <li data-stream="https://stream.vyshka24.ru/wowshanson">88. Wow Music Шансон</li>
+  <li data-stream="https://pub0302.101.ru:8000/stream/trust/mp3/128/10?">89. NRJ House</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/beach96.aacp">90. Record Beach Party</li>
+  <li data-stream="https://abs.zaycev.fm/rus256k">91. Зайцев FM RUS</li>
+  <li data-stream="https://hfm.amgradio.ru/HypeFM?r_bells">92. ХАЙП FM</li>
+  <li data-stream="https://pub0202.101.ru:8443/stream/pro/aac/64/364?">93. NRJ Tropical House</li>
+  <li data-stream="https://rockstation.radiostream.pro/mp3">94. ROCK СТАНЦИЯ</li>
+  <li data-stream="https://misato.ru-hoster.com:8037/stream">95. Вечная Молодость</li>
+  <li data-stream="https://retroclub.hostingradio.ru/retroclubdbl128.aacp">96. Ретроклуб Радио 60-х</li>
+  <li data-stream="https://radiopotok2.online/http://cast.belka-fm.ru:8000/bel2">97. Белка FM</li>
+  <li data-stream="https://evcast.mediacp.eu/sovahi">98. Диско-радио SOVA</li>
+  <li data-stream="https://tntradio.hostingradio.ru:8027/tntradio128.mp3?radiostatistica=radiobells.com">99. ТНТ Music Radio</li>
+  <li data-stream="https://pub0201.101.ru/stream/pro/aac/64/6?">100. NRJ Drum & Bass</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/lofihouse96.aacp">101. Record Lo-Fi House</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/technopop96.aacp">102. Record Technopop</li>
+  <li data-stream="https://hit.trkeurasia.ru/hit128">103. Радио Хит Орск</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/top100edm96.aacp">104. Record TOP 100 EDM</li>
+  <li data-stream="https://radiopotok2.online/http://91.201.117.219:8000/stream">105. 7 Небо</li>
+  <li data-stream="https://radio.promodj.com/nu-192">106. PromoDJ Nu</li>
+  <li data-stream="https://radio.promodj.com/pop-192">107. PromoDJ POP</li>
+  <li data-stream="https://dfm-dancegold00.hostingradio.ru/dancegold0096.aacp">108. DFM Dance Gold 2000s</li>
+  <li data-stream="https://radiopotok2.online/http://79.111.119.111:8000/soulfulhouse">109. Radio Caprice Soulful House</li>
+  <li data-stream="https://radio.promodj.com/yo-192">110. PromoDJ YO</li>
+  <li data-stream="https://radio.promodj.com/300kmh-192">111. PromoDJ 300kmh</li>
+  <li data-stream="https://dfm-basshouse.hostingradio.ru/basshouse96.aacp">112. DFM Bass House</li>
+  <li data-stream="https://radio.promodj.com/mini-192">113. PromoDJ Mini</li>
+  <li data-stream="https://radio.promodj.com/oldschool-192">114. PromoDJ Old School</li>
+  <li data-stream="https://radio.promodj.com/strange-192">115. PromoDJ Strange</li>
+  <li data-stream="https://myradio24.org/10921">116. Dance FM Radio</li>
+  <li data-stream="https://pub0101.101.ru/stream/pro/aac/64/82">117. Euro Hits</li>
+  <li data-stream="https://hitfm-hitcover.hostingradio.ru/hitcover96.aacp">118. Хит FM Кавер</li>
+  <li data-stream="https://myradio24.org/rockataka">119. Рок-Атака</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/jackin96.aacp">120. Record Bass House</li>
+  <li data-stream="https://rr-covers.hostingradio.ru/rrcovers96.aacp">121. Русское Радио Русские Каверы</li>
+  <li data-stream="https://drh-node-02.dline-media.com/powerhit128">122. Power Хит FM 104.5</li>
+  <li data-stream="https://radiopotok2.online/http://jamzone.ddns.net:8080/stream/2/">123. Radio JamZONE КАВЕРадио</li>
+  <li data-stream="https://abs.zaycev.fm/bass256k">124. Зайцев FM Bass</li>
+  <li data-stream="https://radio-holding.ru:9433/rfm">125. Radio Free Music (RFM)</li>
+  <li data-stream="https://hitfm-hitrushit.hostingradio.ru/hitrushit96.aacp">126. Хит FM Русская музыка</li>
+  <li data-stream="https://pub0201.101.ru:8443/stream/trust/mp3/128/170?">127. NRJ Tech House</li>
+  <li data-stream="https://snakedance.stream.laut.fm/snakedance">128. Snake Dance Radio</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/houseclss96.aacp">129. Record House Classics</li>
+  <li data-stream="https://stream.musicaldecadence.ru/live">130. Musical Decadence</li>
+  <li data-stream="https://stream.mixadance.fm/relax">131. MixaDance FM Relax</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/drumhits96.aacp">132. Record D'n'B Classics</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/pump96.aacp">133. Record Кол­бас­ный Цех</li>
+  <li data-stream="https://radiopotok2.online/http://91.189.162.134:8008/;stream.nsv">134. Старое Доброе Радио</li>
+  <li data-stream="https://ec5.yesstreaming.net:2590/stream">135. SunFM Gold Hits</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/fbass96.aacp">136. Record Future Bass</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/groovetribal96.aacp">137. Record Groove/Tribal</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/dreampop96.aacp">138. Record Dream Pop</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/dc96.aacp">139. Record Dancecore</li>
+  <li data-stream="https://pub0302.101.ru:8443/stream/pro/aac/64/74">140. Дискотека 90-ых</li>
+  <li data-stream="https://rr-20.hostingradio.ru/rr2096.aacp">141. Русское Радио Хайповые Двадцатые</li>
+  <li data-stream="https://oldhit.ru:8000/">142. Radio OldHit</li>
+  <li data-stream="https://myradio24.org/67739">143. Lumix FM 90s Forever Channel</li>
+  <li data-stream="https://radiopotok2.online/http://79.111.119.111:8000/acid">144. Radio Caprice Acid House / Trance / Techno</li>
+  <li data-stream="https://abs.zaycev.fm/kpop256k">145. Зайцев FM K-Pop</li>
+  <li data-stream="https://radio.promodj.com/channel5-192">146. PromoDJ Channel 5</li>
+  <li data-stream="https://abs.zaycev.fm/metal256k">147. Зайцев FM Metal</li>
+  <li data-stream="https://dfm-dfmrusdance.hostingradio.ru/dfmrusdance96.aacp">148. DFM Russian Dance</li>
+  <li data-stream="https://abs.zaycev.fm/folk256k">149. Зайцев FM Folk Rock</li>
+  <li data-stream="https://abs.zaycev.fm/rap256k">150. Зайцев FM Rap</li>
+  <li data-stream="https://pub0302.101.ru:8000/stream/trust/mp3/128/13?">151. NRJ Progressive House</li>
+  <li data-stream="https://rr-90.hostingradio.ru/rr9096.aacp">152. Русское Радио Лихие Девяностые</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/club96.aacp">153. Record EDM</li>
+  <li data-stream="https://pub0302.101.ru:8000/stream/pro/aac/64/47?">154. Радио СССР 50-70</li>
+  <li data-stream="https://radiopotok2.online/http://online.radioroks.ua/RadioROKS_HD">155. Radio Roks</li>
+  <li data-stream="https://abs.zaycev.fm/shanson256k">156. Зайцев FM Шансон</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/ps96.aacp">157. Пиратская станция</li>
+  <li data-stream="https://myradio24.org/oldclub">158. DEEP HOUSE MIX RADIO</li>
+  <li data-stream="https://listen7.myradio24.com/75853">159. Шансон Радио</li>
+  <li data-stream="https://www.shanson.org/sites/default/files/inline/audio/medoff-shkola-tancev_0.mp3">160. Шансон Портал Радио</li>
+  <li data-stream="https://listen.radiogora.ru:8443/hitmix128">161. RadioGora HitMix</li>
+  <li data-stream="https://radiopotok2.online/http://radio.mixcult.net:8000/MixCult_256kbps">162. MixCult</li>
+  <li data-stream="https://radiorecord.hostingradio.ru/rus96.aacp">163. Record Russian Mix</li>
+  <li data-stream="https://dfm-saddance.hostingradio.ru/saddance96.aacp">164. DFM Грустный Дэнс</li>
+  <li data-stream="https://radio.voltagefm.ru:9009/VoltageUSSR_64_aac">165. Вольтаж FM СССР</li>
+  <li data-stream="https://radiopotok2.online/http://213.141.131.10:8000/detroittechno">166. Radio Caprice Detroit Techno / Tech House</li>
+    <!-- Добавьте остальные радиостанции здесь -->
+  </ul>
+</div>
+
+<!-- Модальное окно инструкции -->
+<div id="modal">
+  <div id="modalContent">
+    <h2 style="color:yellow; margin-top:0;">Инструкция</h2>
+    <p>
+      - Пробел: старт/пауза движения стрелки и воспроизведения радио<br>
+      - Клик по иконке 🔊 / 🔇: включить или выключить звук<br>
+      - Стрелка автоматически движется по списку радиостанций<br>
+      - Выбранная радиостанция подсвечивается и анимируется во время воспроизведения<br>
+      - Список прокручивается автоматически за стрелкой
+    </p>
+    <p>Наслаждайтесь радио!</p>
+    <button id="closeModal">Закрыть</button>
+  </div>
+</div>
+
+<!-- HLS.js и VK Bridge -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.1/dist/hls.min.js"></script>
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+
+<script>
+(async () => {
+  try { await vkBridge.send('VKWebAppInit'); console.log("VK Bridge инициализирован"); } 
+  catch(e) { console.log("VK Bridge может быть недоступен вне VK Mini Apps"); }
+})();
+</script>
+
+<script>
+let arrow = document.getElementById("arrow");
+let list = document.getElementById("list");
+let container = document.getElementById("container");
+let volumeIcon = document.getElementById("volumeIcon");
+let instructionBtn = document.getElementById("instructionBtn");
+let modal = document.getElementById("modal");
+let closeModal = document.getElementById("closeModal");
+
+let items = list.querySelectorAll("li");
+let arrowPos = 0;
+let moving = true;
+let audio = new Audio();
+let isMuted = true; 
+
+function moveArrow() {
+  if (!moving) return;
+  arrowPos++;
+  if (arrowPos >= items.length) arrowPos = 0;
+  updateArrow();
+  updateAnimation();
+}
+
+function updateArrow() {
+  let li = items[arrowPos];
+  arrow.style.top = li.offsetTop + "px";
+  volumeIcon.style.top = li.offsetTop + "px"; 
+  items.forEach(i => i.classList.remove("highlight"));
+  li.classList.add("highlight");
+  container.scrollTo({top: li.offsetTop - container.clientHeight/2 + li.clientHeight/2, behavior: "smooth"});
+}
+
+function updateAnimation() {
+  items.forEach(i => i.classList.remove("playing"));
+  if (!isMuted && audio.src && !audio.paused) { items[arrowPos].classList.add("playing"); }
+}
+
+// Пробел — старт/пауза движения и воспроизведения
+document.addEventListener("keydown", (e)=>{
+  if (e.code === "Space") {
+    if (moving) {
+      moving = false;
+      let li = items[arrowPos];
+      let stream = li.getAttribute("data-stream");
+      if (stream) {
+        audio.src = stream;
+        audio.play().catch(err => console.log("Автовоспроизведение заблокировано:", err));
+        isMuted = false;
+        audio.muted = false;
+        volumeIcon.textContent = "🔊";
+      }
+    } else {
+      moving = true;
+      audio.pause();
+      audio.src = "";
+      isMuted = true;
+      volumeIcon.textContent = "🔇";
+    }
+    updateAnimation();
+  }
+});
+
+// Клик по иконке динамика
+volumeIcon.addEventListener("click", () => {
+  if (!audio.src) return; 
+  isMuted = !isMuted;
+  audio.muted = isMuted;
+  volumeIcon.textContent = isMuted ? "🔇" : "🔊";
+  updateAnimation();
+});
+
+// Кнопка открытия инструкции
+instructionBtn.addEventListener("click", () => { modal.style.display = "flex"; });
+closeModal.addEventListener("click", () => { modal.style.display = "none"; });
+window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
+
+// Автоматическое движение стрелки по кругу
+setInterval(moveArrow, 300);
+
+updateArrow();
+updateAnimation();
+</script>
+
+</body>
+</html>
