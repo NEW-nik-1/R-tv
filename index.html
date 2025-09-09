@@ -10,7 +10,7 @@
     }
     body {
       margin: 0;
-      background: url('background.jpeg') no-repeat center center fixed;
+      background: url('background.jpg') no-repeat center center fixed;
       background-size: cover;
       color: #e6eef8;
       min-height: 100vh;
@@ -101,37 +101,38 @@
       box-sizing: border-box;
       margin-bottom: 4px;
     }
-    #channels-list {
-      list-style: none;
-      padding: 0;
-      margin: 0 auto;
-      width: 400px;       /* Ширина списка радио */
-      max-height: 750px;  /* Максимальная высота */
-      overflow-y: auto;   /* Вертикальный скролл при необходимости */
+    #radio-list {
+      width: 100%;
+      max-height: 850px;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      align-items: center;
+      margin-top: 8px;
     }
-    #channels-list li {
+    #channels {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+    .channel {
       padding: 12px 16px;
+      background: rgba(14, 35, 50, 0.55);
+      color: #e6eef8;
       font-size: 16px;
-      cursor: pointer;
       border-radius: 6px;
       border: 1px solid rgba(21, 50, 72, 0.5);
-      background: rgba(14, 35, 50, 0.55);
-      text-align: center;
-      color: #e6eef8;
-      user-select: none;
+      cursor: pointer;
       transition: background-color 0.2s,color 0.2s;
-      width: 100%;
-      box-sizing: border-box;
+      user-select: none;
+      text-align: left;
     }
-    #channels-list li:hover {
+    .channel:hover {
       background-color: rgba(34, 68, 102, 0.7);
       color: #fff;
     }
-    #channels-list li.selected {
+    .channel.selected {
       background-color: rgba(42, 107, 154, 0.7);
       color: #fff;
       border-color: rgba(42, 107, 154, 0.8);
@@ -310,8 +311,7 @@
         <audio id="radio-audio" controls></audio>
       </div>
       <div id="radio-list">
-        <ul id="channels-list"></ul>
-      </div>
+        <div id="channels"></div>
     </section>
     <section id="games-overlay">
       <div id="games-list"></div>
@@ -354,7 +354,7 @@
     </div>
   </div>
   <div id="bottom-text">
-    Интерфейс  ТВ/РАДИО/ИГРЫ — Придумал, сделал. MUZER play.
+    Интерфейс ТВ/РАДИО/ИГРЫ — Придумал, сделал. MUZER play.
   </div>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.1/dist/hls.min.js"></script>
   <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
@@ -369,12 +369,12 @@
   </script>
   <script>
     const RADIO_CHANNELS = [
-  { name: "Европа плюс", url: "https://ep256.hostingradio.ru:8052/europaplus256.mp3" },  
-  { name: "Авторадио Дискотека СССР", url: "https://pub0302.101.ru:8000/stream/pro/aac/64/144?" },
-  { name: "Диско-радио SOVA", url: "https://evcast.mediacp.eu:1965/stream" },
   { name: "Радио Рекорд", url: "https://radiorecord.hostingradio.ru/rr_main96.aacp" },
   { name: "Наше радио", url: "https://nashe1.hostingradio.ru/nashe-256" },
   { name: "Авторадио", url: "https://pub0101.101.ru/stream/air/aac/64/100" },
+  { name: "Авторадио Дискотека СССР", url: "https://pub0302.101.ru:8000/stream/pro/aac/64/144?" },
+  { name: "Диско-радио SOVA", url: "https://evcast.mediacp.eu:1965/stream" },
+  { name: "Европа плюс", url: "https://ep256.hostingradio.ru:8052/europaplus256.mp3" },
   { name: "Радио Energy", url: "https://pub0202.101.ru:8443/stream/air/aac/64/99" },
   { name: "Kiss FM", url: "https://radiopotok2.online/http://online.kissfm.ua/KissFM_HD" },
   { name: "Record Remix", url: "https://radiorecord.hostingradio.ru/rmx96.aacp" },
@@ -756,7 +756,7 @@
     const tvContainer = document.getElementById('tv-iframe-container');
     const radioPlayer = document.getElementById('radio-player');
     const radioAudio = document.getElementById('radio-audio');
-    const channelsList = document.getElementById('channels-list');
+    const channelsDiv = document.getElementById('channels');
     const gamesOverlay = document.getElementById('games-overlay');
     const gamesList = document.getElementById('games-list');
     const gameWindow = document.getElementById('game-window');
@@ -798,21 +798,33 @@
       radioPlayer.style.display = 'none';
     });
     function renderChannels() {
-      channelsList.innerHTML = '';
+      channelsDiv.innerHTML = '';
       RADIO_CHANNELS.forEach((ch, idx) => {
-        const li = document.createElement('li');
-        li.textContent = `${idx + 1}. ${ch.name}`;
-        li.title = ch.name;
-        li.dataset.url = ch.url;
-        li.classList.toggle('selected', ch.url === selectedChannelUrl);
-        li.addEventListener('click', () => selectChannel(ch, li));
-        channelsList.appendChild(li);
+        const btn = document.createElement('button');
+        btn.className = 'channel';
+        btn.textContent = `${idx + 1}. ${ch.name}`;
+        btn.title = ch.name;
+        btn.addEventListener('click', () => selectChannel(ch));
+        btn.dataset.url = ch.url;
+        channelsDiv.appendChild(btn);
       });
     }
-    function selectChannel(channel, element) {
+    function renderGames() {
+      gamesList.innerHTML = '';
+      GAMES.forEach((g, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'game-item';
+        btn.textContent = `${idx + 1}. ${g.name}`;
+        btn.title = g.name;
+        btn.addEventListener('click', () => openGame(g));
+        gamesList.appendChild(btn);
+      });
+    }
+    function selectChannel(channel) {
       selectedChannelUrl = channel.url;
-      Array.from(channelsList.children).forEach(li => li.classList.remove('selected'));
-      element.classList.add('selected');
+      Array.from(channelsDiv.children).forEach(btn =>
+        btn.classList.toggle('selected', btn.dataset.url === channel.url)
+      );
       radioAudio.src = channel.url;
       radioAudio.style.display = 'inline-block';
       try {
@@ -896,16 +908,27 @@
     closeHelp.addEventListener('click', () => {
       helpModal.style.display = 'none';
     });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '1') btnTV.click();
+      if (e.key === '2') btnRadio.click();
+      if (e.key === '3') btnGames.click();
+      if (e.key === 'Escape') {
+        closeGame();
+        helpModal.style.display = 'none';
+        if (gamesOverlay.style.display === 'flex') gamesOverlay.style.display = 'none';
+      }
+    });
+
+    // Автозапуск вкладки радио и выделение первой радиостанции
     window.addEventListener('load', () => {
       btnRadio.click();
       if (RADIO_CHANNELS.length > 0) {
-        selectChannel(RADIO_CHANNELS[0], null);
+        selectChannel(RADIO_CHANNELS[0]);
       }
     });
+
     renderChannels();
     renderGames();
   </script>
 </body>
 </html>
-
-
