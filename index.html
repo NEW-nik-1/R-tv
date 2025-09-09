@@ -10,7 +10,7 @@
     }
     body {
       margin: 0;
-      background: url('background.jpg') no-repeat center center fixed;
+      background: url('background.jpeg') no-repeat center center fixed;
       background-size: cover;
       color: #e6eef8;
       min-height: 100vh;
@@ -83,7 +83,7 @@
       border-radius: 10px;
       border: 1px solid rgba(33, 50, 67, 0.5);
       width: 100%;
-      max-width: 800px;
+      max-width: 510px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -96,19 +96,10 @@
       justify-content: center;
     }
     #radio-audio {
-      width: 700px;
+      width: 500px;
       max-width: 100%;
       box-sizing: border-box;
       margin-bottom: 4px;
-    }
-    #radio-list {
-      width: 100%;
-      max-height: 850px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 8px;
     }
     #channels {
       display: flex;
@@ -144,18 +135,44 @@
       background: rgba(7, 16, 24, 0.5);
       border-radius: 10px;
       border: 1px solid rgba(33, 50, 67, 0.5);
-      max-height: 600px;
-      width: 400px;
+      width: 490px;
+      max-width: 100%;
       overflow: hidden;
       flex-direction: column;
     }
+
+    /* Общие стили для списков радио и игр: одинаковый размер + скролл */
+    #radio-list,
     #games-list {
-      flex: 1;
-      height: 750px;
+      width: 490px;
+      height: 600px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      box-sizing: border-box;
+    }
+
+    /* Кастомный скролл для обоих списков */
+    #radio-list::-webkit-scrollbar,
+    #games-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    #radio-list::-webkit-scrollbar-thumb,
+    #games-list::-webkit-scrollbar-thumb {
+      background: rgba(80, 130, 180, 0.6);
+      border-radius: 4px;
+    }
+    #radio-list::-webkit-scrollbar-track,
+    #games-list::-webkit-scrollbar-track {
+      background: rgba(20, 30, 40, 0.3);
+    }
+
+    #games-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      /* width и height заданы выше совместно с #radio-list */
     }
     .game-item {
       padding: 14px 16px;
@@ -174,6 +191,9 @@
       color: #fff !important;
       cursor: pointer;
     }
+    /* Кастомный скролл */
+    /* (Повтор обрезан - скролл объединен выше) */
+
     #game-window {
       display: none;
       position: fixed;
@@ -211,11 +231,6 @@
       border-radius: 6px;
       cursor: pointer;
       color: #bfe1ff;
-    }
-    #game-iframe {
-      width: 100%;
-      height: calc(100% - 40px);
-      border: 0;
     }
     #game-window.minimized {
       height: 42px;
@@ -312,6 +327,7 @@
       </div>
       <div id="radio-list">
         <div id="channels"></div>
+      </div>
     </section>
     <section id="games-overlay">
       <div id="games-list"></div>
@@ -368,14 +384,14 @@
     })();
   </script>
   <script>
-    const RADIO_CHANNELS = [
+    const RADIO_CHANNELS = [ 
   { name: "Радио Рекорд", url: "https://radiorecord.hostingradio.ru/rr_main96.aacp" },
   { name: "Наше радио", url: "https://nashe1.hostingradio.ru/nashe-256" },
   { name: "Авторадио", url: "https://pub0101.101.ru/stream/air/aac/64/100" },
+  { name: "Радио Energy", url: "https://pub0202.101.ru:8443/stream/air/aac/64/99" },
   { name: "Авторадио Дискотека СССР", url: "https://pub0302.101.ru:8000/stream/pro/aac/64/144?" },
   { name: "Диско-радио SOVA", url: "https://evcast.mediacp.eu:1965/stream" },
   { name: "Европа плюс", url: "https://ep256.hostingradio.ru:8052/europaplus256.mp3" },
-  { name: "Радио Energy", url: "https://pub0202.101.ru:8443/stream/air/aac/64/99" },
   { name: "Kiss FM", url: "https://radiopotok2.online/http://online.kissfm.ua/KissFM_HD" },
   { name: "Record Remix", url: "https://radiorecord.hostingradio.ru/rmx96.aacp" },
   { name: "Remix FM", url: "https://rmx.amgradio.ru/RemixFM?r_bells" },
@@ -459,7 +475,7 @@
   { name: "DEEP FM Radio", url: "https://deep.amgradio.ru/DeepFM?r_bells" },
   { name: "Rock Radio", url: "https://cast2.my-control-panel.com/proxy/vladas/stream" },
   { name: "Russian Deep Radio", url: "https://radiopotok2.online/http://radio.rudeep.ru:8000/stream" },
-  { name: "Radio Caprice Deep / Chill House", url: "https://radiopotok2.online/http://79.120.39.202:8000/deephouse" }
+  { name: "Radio Caprice Deep / Chill House", url: "https://radiopotok2.online/http://79.120.39.202:8000/deephouse" },
   { name: "TranceOne", url: "https://radio.trance.one:8443/online" },
   { name: "Radio Roks", url: "https://radiopotok2.online/http://online.radioroks.ua/RadioROKS_HD" },
   { name: "Enigmatic Drive", url: "https://radio.enigmatic.su:8015/radio" },
@@ -546,7 +562,7 @@
   { name: "Radio Essential", url: "https://c16.radioboss.fm:18258/radioessential" },
   { name: "Euro Hits", url: "https://pub0101.101.ru/stream/pro/aac/64/82" },
   { name: "Radio Caprice Turkish Pop / Pop Rock", url: "https://radiopotok2.online/http://213.141.131.10:8000/turkishpop" },
-  { name: "Radio Caprice Chinese Pop", url: "https://radiopotok2.online/http://213.141.131.10:8000/cpop" }
+  { name: "Radio Caprice Chinese Pop", url: "https://radiopotok2.online/http://213.141.131.10:8000/cpop" },
   { name: "1FM Dubstep Forward", url: "https://radiopotok2.online/http://strm112.1.fm/dubstep_mobile_mp3" },
   { name: "Radio Caprice Ethnic Electronica", url: "https://radiopotok2.online/http://79.120.39.202:8000/ethnotronica" },
   { name: "Radio Caprice Balearic House", url: "https://radiopotok2.online/http://213.141.131.10:8000/balearichouse" },
@@ -602,7 +618,6 @@
   { name: "Ностальжи Франция", url: "https://radiopotok2.online/http://185.52.127.132/fr/30601/aac_64.mp3" },
   { name: "Радио Советские песни", url: "https://sovetskie-pesni.ru:8005/stream" },
   { name: "Отличное Радио: Русское", url: "https://listen1.myradio24.com/8234" },
-  { name: "Радио Русская реклама", url: "https://securestreams5.autopo.st:1844/stream" },
   { name: "Радио Релиз", url: "https://listen.myrh.ru/radioreliz" },
   { name: "Дискотека 90-ых", url: "https://pub0302.101.ru:8443/stream/pro/aac/64/74" },
   { name: "Душевное радио", url: "https://stream2.datacenter.by/dushevnoe" },
@@ -640,7 +655,7 @@
   { name: "MixaDance FM", url: "https://stream.mixadance.fm/mixadance" },
   { name: "Дискотека 80-90", url: "https://myradio24.org/dance80" },
   { name: "DFM Дискач 90-ых", url: "https://dfm-disc90.hostingradio.ru/disc9096.aacp" },
-  { name: "Радио Tape Hits", url: "https://tapehits.com:8005/stream" }
+  { name: "Радио Tape Hits", url: "https://tapehits.com:8005/stream" },
   { name: "Радио СССР 30-50", url: "https://pub0302.101.ru:8000/stream/pro/aac/64/46?" },
   { name: "Dancing Fox", url: "https://stream.cassiopeia-station.ru:1135/stream" },
   { name: "Зайцев FM Club", url: "https://abs.zaycev.fm/club256k" },
@@ -736,7 +751,8 @@
   { name: "Радио Шкипер", url: "https://myradio24.org/bolshevek" },
   { name: "Радио Лучшие Песни", url: "https://rbs.amgradio.ru/rbs?r_bells" },
   { name: "Радио Движение", url: "https://c4.radioboss.fm:18218/stream" }
-    ];
+];
+
     const GAMES = [
       { name: "Gary's World", url: "https://html5.gamemonetize.co/dd5rs8etri5hw51g32sk69qfdoov5tq2/" },
       { name: "Crazy Ball Adventures", url: "https://www.onlinegames.io/games/2021/unity2/crazy-ball-adventures/index.html" },
@@ -918,7 +934,6 @@
         if (gamesOverlay.style.display === 'flex') gamesOverlay.style.display = 'none';
       }
     });
-
     // Автозапуск вкладки радио и выделение первой радиостанции
     window.addEventListener('load', () => {
       btnRadio.click();
@@ -926,7 +941,6 @@
         selectChannel(RADIO_CHANNELS[0]);
       }
     });
-
     renderChannels();
     renderGames();
   </script>
