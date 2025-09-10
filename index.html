@@ -8,15 +8,27 @@
     :root {
       font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
     }
-    body {
+    html, body {
+      overflow: hidden;
+      height: 100%;
       margin: 0;
-      background: url('background.jpeg') no-repeat center center fixed;
+      padding: 0;
+    }
+    body {
+      background: url('background.jpg') no-repeat center center fixed;
       background-size: cover;
       color: #e6eef8;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+
+      /* Уменьшаем масштаб страницы */
+      transform: scale(0.8);
+      transform-origin: 0 0;
+      width: 125vw;
+      height: 125vh;
+      min-height: 100vh;
     }
     header {
       display: flex;
@@ -70,7 +82,7 @@
       border: 1px solid rgba(34, 50, 70, 0.5);
       width: 100%;
       max-width: 590px;
-      height: 750px;
+      height: 780px;
     }
     #tv-iframe {
       width: 100%;
@@ -83,7 +95,7 @@
       border-radius: 10px;
       border: 1px solid rgba(33, 50, 67, 0.5);
       width: 100%;
-      max-width: 510px;
+      max-width: 800px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -96,10 +108,18 @@
       justify-content: center;
     }
     #radio-audio {
-      width: 500px;
+      width: 700px;
       max-width: 100%;
       box-sizing: border-box;
       margin-bottom: 4px;
+    }
+    #radio-list {
+      max-height: 500px; /* увеличенная высота */
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
     }
     #channels {
       display: flex;
@@ -117,7 +137,10 @@
       cursor: pointer;
       transition: background-color 0.2s,color 0.2s;
       user-select: none;
-      text-align: left;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .channel:hover {
       background-color: rgba(34, 68, 102, 0.7);
@@ -127,7 +150,6 @@
       background-color: rgba(42, 107, 154, 0.7);
       color: #fff;
       border-color: rgba(42, 107, 154, 0.8);
-      font-weight: bold;
     }
     #games-overlay {
       display: none;
@@ -135,44 +157,18 @@
       background: rgba(7, 16, 24, 0.5);
       border-radius: 10px;
       border: 1px solid rgba(33, 50, 67, 0.5);
-      width: 490px;
-      max-width: 100%;
+      max-height: 600px;
+      width: 400px;
       overflow: hidden;
       flex-direction: column;
     }
-
-    /* Общие стили для списков радио и игр: одинаковый размер + скролл */
-    #radio-list,
     #games-list {
-      width: 490px;
-      height: 600px;
+      flex: 1;
+      height: 750px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      box-sizing: border-box;
-    }
-
-    /* Кастомный скролл для обоих списков */
-    #radio-list::-webkit-scrollbar,
-    #games-list::-webkit-scrollbar {
-      width: 8px;
-    }
-    #radio-list::-webkit-scrollbar-thumb,
-    #games-list::-webkit-scrollbar-thumb {
-      background: rgba(80, 130, 180, 0.6);
-      border-radius: 4px;
-    }
-    #radio-list::-webkit-scrollbar-track,
-    #games-list::-webkit-scrollbar-track {
-      background: rgba(20, 30, 40, 0.3);
-    }
-
-    #games-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      /* width и height заданы выше совместно с #radio-list */
     }
     .game-item {
       padding: 14px 16px;
@@ -180,7 +176,10 @@
       border-radius: 8px;
       cursor: pointer;
       border: 1px solid rgba(21, 50, 72, 0.5);
-      text-align: left;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       font-size: 18px;
       color: #fff;
       user-select: none;
@@ -191,9 +190,6 @@
       color: #fff !important;
       cursor: pointer;
     }
-    /* Кастомный скролл */
-    /* (Повтор обрезан - скролл объединен выше) */
-
     #game-window {
       display: none;
       position: fixed;
@@ -231,6 +227,11 @@
       border-radius: 6px;
       cursor: pointer;
       color: #bfe1ff;
+    }
+    #game-iframe {
+      width: 100%;
+      height: calc(100% - 40px);
+      border: 0;
     }
     #game-window.minimized {
       height: 42px;
@@ -308,6 +309,28 @@
       box-sizing: border-box;
       margin: 0 auto 10px auto;
     }
+
+    /* Стилизация скроллбара для списков радио и игр цвет #063971 */
+    #radio-list::-webkit-scrollbar,
+    #games-list::-webkit-scrollbar {
+      width: 12px;
+    }
+    #radio-list::-webkit-scrollbar-track,
+    #games-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #radio-list::-webkit-scrollbar-thumb,
+    #games-list::-webkit-scrollbar-thumb {
+      background-color: #063971;
+      border-radius: 6px;
+      border: 3px solid transparent;
+      background-clip: content-box;
+    }
+    #radio-list,
+    #games-list {
+      scrollbar-width: thin;
+      scrollbar-color: #063971 transparent;
+    }
   </style>
 </head>
 <body>
@@ -384,7 +407,7 @@
     })();
   </script>
   <script>
-    const RADIO_CHANNELS = [ 
+    const RADIO_CHANNELS = [
   { name: "Радио Рекорд", url: "https://radiorecord.hostingradio.ru/rr_main96.aacp" },
   { name: "Наше радио", url: "https://nashe1.hostingradio.ru/nashe-256" },
   { name: "Авторадио", url: "https://pub0101.101.ru/stream/air/aac/64/100" },
@@ -751,8 +774,7 @@
   { name: "Радио Шкипер", url: "https://myradio24.org/bolshevek" },
   { name: "Радио Лучшие Песни", url: "https://rbs.amgradio.ru/rbs?r_bells" },
   { name: "Радио Движение", url: "https://c4.radioboss.fm:18218/stream" }
-];
-
+    ];
     const GAMES = [
       { name: "Gary's World", url: "https://html5.gamemonetize.co/dd5rs8etri5hw51g32sk69qfdoov5tq2/" },
       { name: "Crazy Ball Adventures", url: "https://www.onlinegames.io/games/2021/unity2/crazy-ball-adventures/index.html" },
@@ -932,13 +954,6 @@
         closeGame();
         helpModal.style.display = 'none';
         if (gamesOverlay.style.display === 'flex') gamesOverlay.style.display = 'none';
-      }
-    });
-    // Автозапуск вкладки радио и выделение первой радиостанции
-    window.addEventListener('load', () => {
-      btnRadio.click();
-      if (RADIO_CHANNELS.length > 0) {
-        selectChannel(RADIO_CHANNELS[0]);
       }
     });
     renderChannels();
