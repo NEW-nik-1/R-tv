@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Редактор с фоном, скруглением, обводкой и вращением текста</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 12px; display:flex; gap:16px; }
+#left { flex:1; }
+#canvasWrap { background:#222; border-radius:8px; padding:12px; }
+canvas { background:#222; display:block; border-radius:6px; cursor:grab; }
+#controls { width:320px; padding:10px; border-left:1px solid #ddd; }
+label { display:block; margin-top:10px; font-size:13px; color:#222; }
+input[type="text"], input[type="number"], select, input[type="range"] { width:100%; padding:8px; box-sizing:border-box; margin-top:6px; }
+.row { display:flex; gap:8px; }
+.btn { margin-top:10px; padding:8px 12px; cursor:pointer; border-radius:6px; border:1px solid #bbb; background:#fff; }
+.btn.active { background:#2b83ff; color:#fff; }
+.small { padding:6px 8px; font-size:13px; }
+#objectList { margin-top:10px; max-height: 150px; overflow-y:auto; }
+.control-block { background:#fafafa; padding:8px; border-radius:6px; margin-top:10px; border:1px solid #eee; }
+input[type="color"] { width:48px; height:48px; padding:0; border:none; vertical-align:middle; cursor:pointer; }
+
+/* Модальное окно */
+#helpModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
+#helpModalContent { background:#fff; padding:20px; border-radius:8px; width:600px; max-height:80%; overflow:auto; position:relative; }
+#helpModalContent h2 { margin-top:0; }
+#closeHelp { position:absolute; top:10px; right:10px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div id="left">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <h1 style="margin:0; font-size:18px;">Редактор - сделай обложку для вк</h1>
+    <button id="helpBtn" class="btn">?</button>
+  </div>
+
+  <div id="canvasWrap">
+    <canvas id="c" width="1100" height="420"></canvas>
+  </div>
+
+  <div style="margin-top:12px;">
+    <label>Загрузить фон</label>
+    <input type="file" id="bgFile" accept="image/*" />
+
+    <label>Добавить картинку</label>
+    <input type="file" id="addImgFile" accept="image/*" />
+
+    <button id="savePngBtn" class="btn">Сохранить PNG</button>
+    <button id="saveJpgBtn" class="btn">Сохранить JPG</button>
+  </div>
+
+  <div style="margin-top: 10px;">
+    <label><input type="checkbox" id="toggleBgStroke" /> Включить обводку фона</label>
+    <label>Цвет обводки фона</label>
+    <input type="color" id="bgStrokeColor" value="#ff0000" />
+    <label><input type="checkbox" id="toggleBgRound" /> Включить скругление углов</label>
+  </div>
+</div>
+
+<div id="controls">
+  <h2>Настройка текста</h2>
+
+  <label>Координаты X и Y</label>
+  <div class="row">
+    <input id="posX" type="number" value="220" />
+    <input id="posY" type="number" value="40" />
+  </div>
+
+  <label>Текст</label>
+  <input id="textValue" type="text" value="текст" />
+
+  <label>Шрифт</label>
+  <select id="fontSelect">
+    <option>Arial</option>
+    <option>Roboto</option>
+    <option>Times New Roman</option>
+    <option>Georgia</option>
+    <option>Impact</option>
+  </select>
+
+  <label>Размер (px)</label>
+  <input id="fontSize" type="number" value="56" />
+
+  <label>Поворот текста (°)</label>
+  <input id="rotateText" type="range" min="0" max="360" value="0" />
+
+  <div style="display:flex; gap:8px; margin-top:8px; align-items: center;">
+    <button id="boldBtn" class="btn small">B</button>
+    <button id="italicBtn" class="btn small">/</button>
+
+    <label for="colorText" style="margin:0 8px 0 8px;">Цвет текста</label>
+    <input id="colorText" type="color" value="#ffffff" />
+
+    <label for="strokeColor" style="margin-left:16px;">Цвет обводки</label>
+    <input id="strokeColor" type="color" value="#000000" />
+  </div>
+
+  <label>Обводка (px)</label>
+  <input id="strokeWidth" type="number" value="0" />
+
+  <div class="control-block">
+    <button id="addTextBtn" class="btn">+ Добавить текст</button>
+    <button id="clearBtn" class="btn">Отмена (очистить)</button>
+    <button id="deleteBtn" class="btn">Удалить текст/картинку</button>
+  </div>
+
+  <div id="objectList"></div>
+</div>
+
+<!-- Модальное окно помощи -->
+<div id="helpModal">
+  <div id="helpModalContent">
+    <h2>Инструкция по использованию редактора</h2>
+    <p><strong>1. Фон</strong></p>
+    <ul>
+      <li>Загрузите фон через кнопку «Загрузить фон».</li>
+      <li>Можно включить скругление углов и обводку.</li>
+      <li>Цвет обводки выбирается через селектор цвета.</li>
+    </ul>
+
+    <p><strong>2. Картинки</strong></p>
+    <ul>
+      <li>Добавьте картинку через «Добавить картинку».</li>
+      <li>Картинка появляется уменьшенной и её можно перемещать мышью.</li>
+      <li>Размер картинки изменяется с помощью правого нижнего квадратика.</li>
+    </ul>
+
+    <p><strong>3. Текст</strong></p>
+    <ul>
+      <li>Добавьте текст через кнопку «+ Добавить текст».</li>
+      <li>Выделенный текст можно перемещать мышью.</li>
+      <li>Размер текста изменяется тянув правый нижний угол.</li>
+      <li>Настройки текста: шрифт, размер, цвет, жирный, курсив, обводка, поворот.</li>
+    </ul>
+
+    <p><strong>4. Список объектов</strong></p>
+    <ul>
+      <li>Показывает все добавленные тексты и картинки.</li>
+      <li>Клик по объекту выделяет его.</li>
+      <li>Удаление через кнопку «Удалить текст/картинку».</li>
+    </ul>
+
+    <p><strong>5. Сохранение</strong></p>
+    <ul>
+      <li>Сохраняйте результат в формате PNG или JPG с помощью соответствующих кнопок.</li>
+      <li>Изображения сохраняются в разрешении <strong>1920×768</strong> пикселей.</li>
+    </ul>
+
+    <p><strong>6. Перемещение и масштабирование</strong></p>
+    <ul>
+      <li>Перетаскивание: клик и удержание объекта мышью.</li>
+      <li>Масштабирование: тянем за правый нижний угол выделенного объекта.</li>
+    </ul>
+
+    <button id="closeHelp" class="btn">Закрыть ✖</button>
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+let bgImage=null, images=[], objects=[], selectedIndex=-1, selectedType=null;
+let bgStrokeEnabled=false, bgStrokeColor='#ff0000', bgRoundEnabled=false;
+let isDragging=false, isResizing=false, dragOffset={x:0,y:0};
+let resizeHandleSize=12;
+
+function roundRect(ctx,x,y,w,h,r){ 
+  if(r>w/2) r=w/2; if(r>h/2) r=h/2; 
+  ctx.beginPath(); 
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath(); 
+}
+function TextObject(opts){ 
+  return { type:'text', x: opts.x||100, y: opts.y||100, text: opts.text||'текст', fontFamily: opts.fontFamily||'Arial', fontSize: opts.fontSize||40, bold: !!opts.bold, italic: !!opts.italic, color: opts.color||'#ffffff', strokeWidth: opts.strokeWidth||0, strokeColor: opts.strokeColor||'#000000', rotation: opts.rotation||0 }; 
+}
+function ImageObject(img,x=0,y=0,w=null,h=null, aspectRatio=null){ 
+  w=w||img.width; h=h||img.height; aspectRatio = aspectRatio || w / h;
+  return { img, x, y, width: w, height: h, type:'image', aspectRatio }; 
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(bgImage){
+    if(bgRoundEnabled){ 
+      ctx.save(); roundRect(ctx,0,0,canvas.width,canvas.height,20); ctx.clip(); 
+      ctx.drawImage(bgImage,0,0,canvas.width,canvas.height); ctx.restore(); 
+    } else ctx.drawImage(bgImage,0,0,canvas.width,canvas.height);
+  } else {
+    if(bgRoundEnabled){ ctx.fillStyle='#222'; roundRect(ctx,0,0,canvas.width,canvas.height,20); ctx.fill(); } 
+    else { ctx.fillStyle='#222'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+  }
+  if(bgStrokeEnabled){ 
+    ctx.save(); ctx.lineWidth=4; ctx.strokeStyle=bgStrokeColor; 
+    if(bgRoundEnabled) roundRect(ctx,0,0,canvas.width,canvas.height,20); else ctx.strokeRect(0,0,canvas.width,canvas.height);
+    ctx.stroke(); ctx.restore(); 
+  }
+
+  images.forEach((img,i)=>{
+    ctx.drawImage(img.img,img.x,img.y,img.width,img.height);
+    if(selectedType==='image' && selectedIndex===i){ 
+      ctx.save(); ctx.strokeStyle='#2b83ff'; ctx.lineWidth=2; ctx.setLineDash([6,4]); 
+      ctx.strokeRect(img.x-4,img.y-4,img.width+8,img.height+8); 
+      ctx.setLineDash([]); ctx.fillStyle='#2b83ff'; ctx.fillRect(img.x+img.width-8,img.y+img.height-8,12,12); ctx.restore(); 
+    }
+  });
+
+  objects.forEach((o,i)=>{
+    ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(o.rotation*Math.PI/180);
+    ctx.font=(o.italic?'italic ':'')+(o.bold?'bold ':'')+o.fontSize+'px '+o.fontFamily;
+    ctx.textBaseline='top';
+    if(o.strokeWidth>0){ ctx.lineWidth=o.strokeWidth; ctx.strokeStyle=o.strokeColor; ctx.strokeText(o.text,0,0);}
+    ctx.fillStyle=o.color; ctx.fillText(o.text,0,0);
+    if(selectedType==='text' && selectedIndex===i){ 
+      ctx.setLineDash([6,4]); ctx.strokeStyle='#bbb'; ctx.lineWidth=1; 
+      const w=ctx.measureText(o.text).width; 
+      const h=o.fontSize*1.2; 
+      ctx.strokeRect(-6,-6,w+12,h+12); ctx.setLineDash([]); 
+      ctx.fillStyle='#2b83ff'; ctx.fillRect(w-8,h-8,12,12); 
+    }
+    ctx.restore();
+  });
+
+  refreshObjectList();
+}
+
+function refreshObjectList(){
+  const list=document.getElementById('objectList');
+  list.innerHTML='<strong>Объекты:</strong>';
+  images.forEach((img,i)=>{
+    const el=document.createElement('div');
+    el.style.padding='6px';
+    el.style.borderBottom='1px solid #eee';
+    el.style.cursor='pointer';
+    el.textContent=(selectedType==='image' && selectedIndex===i?'→ ':'')+'Картинка №'+(i+1);
+    el.onclick=()=>{ selectObject(i,'image'); };
+    list.appendChild(el);
+  });
+  objects.forEach((o,i)=>{
+    const el=document.createElement('div');
+    el.style.padding='6px';
+    el.style.borderBottom='1px solid #eee';
+    el.style.cursor='pointer';
+    el.textContent=(selectedType==='text' && selectedIndex===i?'→ ':'')+o.text;
+    el.onclick=()=>{ selectObject(i,'text'); };
+    list.appendChild(el);
+  });
+}
+
+function selectObject(index,type){
+  selectedIndex=index; selectedType=type;
+  if(type==='text') updateTextPanel();
+  else updateTextPanel(null); // очистить панель если выделен не текст
+  draw();
+}
+function updateTextPanel(t){
+  if(t && selectedType==='text'){
+    document.getElementById('textValue').value=t.text;
+    document.getElementById('posX').value=t.x;
+    document.getElementById('posY').value=t.y;
+    document.getElementById('fontSelect').value=t.fontFamily;
+    document.getElementById('fontSize').value=t.fontSize;
+    document.getElementById('rotateText').value=t.rotation;
+    document.getElementById('colorText').value=t.color;
+    document.getElementById('strokeColor').value=t.strokeColor;
+    document.getElementById('strokeWidth').value=t.strokeWidth;
+    document.getElementById('boldBtn').classList.toggle('active', t.bold);
+    document.getElementById('italicBtn').classList.toggle('active', t.italic);
+  } else {
+    document.getElementById('textValue').value='';
+    document.getElementById('posX').value='';
+    document.getElementById('posY').value='';
+    document.getElementById('fontSelect').value='Arial';
+    document.getElementById('fontSize').value=40;
+    document.getElementById('rotateText').value=0;
+    document.getElementById('colorText').value='#ffffff';
+    document.getElementById('strokeColor').value='#000000';
+    document.getElementById('strokeWidth').value=0;
+    document.getElementById('boldBtn').classList.remove('active');
+    document.getElementById('italicBtn').classList.remove('active');
+  }
+}
+
+document.getElementById('addTextBtn').onclick=()=>{
+  const t=TextObject({x:100,y:100,text:'Новый текст',fontFamily:'Arial',fontSize:40,color:'#fff'});
+  objects.push(t); selectObject(objects.length-1,'text'); draw();
+};
+document.getElementById('deleteBtn').onclick=()=>{
+  if(selectedType==='text' && selectedIndex>=0){ objects.splice(selectedIndex,1); selectedIndex=-1; selectedType=null; draw(); }
+  if(selectedType==='image' && selectedIndex>=0){ images.splice(selectedIndex,1); selectedIndex=-1; selectedType=null; draw(); }
+};
+document.getElementById('clearBtn').onclick=()=>{
+  objects=[]; images=[]; selectedIndex=-1; selectedType=null; updateTextPanel(null); draw();
+};
+
+['textValue','posX','posY','fontSelect','fontSize','rotateText','colorText','strokeColor','strokeWidth'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    if(selectedType==='text' && selectedIndex>=0){
+      const t=objects[selectedIndex];
+      t.text=document.getElementById('textValue').value;
+      t.x=parseFloat(document.getElementById('posX').value);
+      t.y=parseFloat(document.getElementById('posY').value);
+      t.fontFamily=document.getElementById('fontSelect').value;
+      t.fontSize=parseFloat(document.getElementById('fontSize').value);
+      t.rotation=parseFloat(document.getElementById('rotateText').value);
+      t.color=document.getElementById('colorText').value;
+      t.strokeColor=document.getElementById('strokeColor').value;
+      t.strokeWidth=parseFloat(document.getElementById('strokeWidth').value);
+      draw();
+    }
+  });
+});
+document.getElementById('boldBtn').onclick=()=>{
+  if(selectedType==='text' && selectedIndex>=0){
+    const t=objects[selectedIndex];
+    t.bold=!t.bold;
+    document.getElementById('boldBtn').classList.toggle('active',t.bold);
+    draw();
+  }
+};
+document.getElementById('italicBtn').onclick=()=>{
+  if(selectedType==='text' && selectedIndex>=0){
+    const t=objects[selectedIndex];
+    t.italic=!t.italic;
+    document.getElementById('italicBtn').classList.toggle('active',t.italic);
+    draw();
+  }
+};
+
+document.getElementById('bgFile').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const img=new Image();
+  img.onload=()=>{ bgImage=img; draw(); };
+  img.src=URL.createObjectURL(file);
+});
+document.getElementById('addImgFile').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const img=new Image();
+  img.onload=()=>{
+    const aspectRatio = img.width / img.height;
+    const newImg=ImageObject(img,50,50,img.width*0.7,img.height*0.7, aspectRatio);
+    images.push(newImg);
+    selectObject(images.length-1,'image');
+    draw();
+  };
+  img.src=URL.createObjectURL(file);
+});
+
+canvas.addEventListener('mousedown', e=>{
+  const mouseX = e.offsetX, mouseY = e.offsetY;
+  let clickedOnObject = false;
+  
+  // Проверяем картинки с конца для корректного выбора по слою
+  for(let i = images.length - 1; i >= 0; i--){
+    const img = images[i];
+    if(mouseX >= img.x && mouseX <= img.x + img.width &&
+       mouseY >= img.y && mouseY <= img.y + img.height){
+      selectObject(i, 'image');
+      clickedOnObject = true;
+      break;
+    }
+  }
+  
+  if(!clickedOnObject){
+    // Проверяем текст с конца для выбора верхнего слоя
+    for(let i = objects.length - 1; i >= 0; i--){
+      const t = objects[i];
+      ctx.save();
+      ctx.translate(t.x, t.y);
+      ctx.rotate(t.rotation * Math.PI/180);
+      const w = ctx.measureText(t.text).width;
+      const h = t.fontSize * 1.2;
+      ctx.restore();
+      
+      // Проверяем попадание в прямоугольник (упрощенно, без учёта вращения)
+      if(mouseX >= t.x && mouseX <= t.x + w &&
+         mouseY >= t.y && mouseY <= t.y + h){
+        selectObject(i, 'text');
+        clickedOnObject = true;
+        break;
+      }
+    }
+  }
+  
+  if(!clickedOnObject) {
+    selectedIndex = -1;
+    selectedType = null;
+    updateTextPanel(null);
+    draw();
+  }
+
+  isDragging=false; isResizing=false;
+  if(clickedOnObject && selectedIndex>=0 && selectedType){
+    const obj = selectedType==='text'? objects[selectedIndex] : images[selectedIndex];
+    const w = selectedType==='text'? ctx.measureText(obj.text).width : obj.width;
+    const h = selectedType==='text'? obj.fontSize*1.2 : obj.height;
+    if(mouseX >= obj.x + w - resizeHandleSize && mouseX <= obj.x + w + resizeHandleSize &&
+       mouseY >= obj.y + h - resizeHandleSize && mouseY <= obj.y + h + resizeHandleSize){ 
+      isResizing=true; 
+    }
+    else if(mouseX>=obj.x && mouseX<=obj.x+w && mouseY>=obj.y && mouseY<=obj.y+h){ 
+      isDragging=true; dragOffset.x=mouseX-obj.x; dragOffset.y=mouseY-obj.y; 
+    }
+  }
+});
+canvas.addEventListener('mousemove', e=>{
+  const mouseX=e.offsetX, mouseY=e.offsetY;
+  if(isDragging && selectedType && selectedIndex>=0){
+    const obj = selectedType==='text'? objects[selectedIndex] : images[selectedIndex];
+    obj.x = mouseX - dragOffset.x; obj.y = mouseY - dragOffset.y; draw();
+  }
+  if(isResizing && selectedType && selectedIndex>=0){
+    const obj = selectedType==='text'? objects[selectedIndex] : images[selectedIndex];
+    if(selectedType==='text') obj.fontSize = Math.max(10, mouseY - obj.y);
+    else {
+      obj.width = Math.max(20, mouseX - obj.x);
+      obj.height = obj.width / obj.aspectRatio; // сохраняем пропорции
+    }
+    draw();
+  }
+});
+canvas.addEventListener('mouseup',()=>{ isDragging=false; isResizing=false; });
+
+document.getElementById('toggleBgStroke').addEventListener('change',e=>{ bgStrokeEnabled=e.target.checked; draw(); });
+document.getElementById('bgStrokeColor').addEventListener('input', e=>{ bgStrokeColor=e.target.value; draw(); });
+document.getElementById('toggleBgRound').addEventListener('change', e=>{ bgRoundEnabled=e.target.checked; draw(); });
+
+function saveCanvas(type){
+  // Сохраняем с разрешением 1920x768
+  const originalWidth = canvas.width;
+  const originalHeight = canvas.height;
+  
+  canvas.width = 1920;
+  canvas.height = 768;
+  draw();
+  
+  const mimeType = (type === 'jpeg') ? 'image/jpeg' : 'image/png';
+  const dataUrl = canvas.toDataURL(mimeType, type === 'jpeg' ? 0.95 : undefined);
+  
+  const link = document.createElement('a');
+  link.download = 'canvas.' + type;
+  link.href = dataUrl;
+  link.click();
+  
+  canvas.width = originalWidth;
+  canvas.height = originalHeight;
+  draw();
+}
+
+document.getElementById('savePngBtn').onclick = () => saveCanvas('png');
+document.getElementById('saveJpgBtn').onclick = () => saveCanvas('jpeg');
+
+document.getElementById('helpBtn').addEventListener('click', ()=>{ document.getElementById('helpModal').style.display='flex'; });
+document.getElementById('closeHelp').addEventListener('click', ()=>{ document.getElementById('helpModal').style.display='none'; });
+document.getElementById('helpModal').addEventListener('click', e=>{ if(e.target.id==='helpModal') document.getElementById('helpModal').style.display='none'; });
+
+// инициализация текста по центру холста
+const initialText='текст';
+ctx.font='56px Roboto';
+const textWidth=ctx.measureText(initialText).width;
+const textHeight=56*1.2;
+const centerX=(canvas.width-textWidth)/2;
+const centerY=(canvas.height-textHeight)/2;
+objects.push(TextObject({x:centerX,y:centerY,text:initialText,fontFamily:'Roboto',fontSize:56,color:'#ffffff'}));
+selectedType='text'; selectedIndex=0;
+draw();
+</script>
+
+</body>
+</html>
