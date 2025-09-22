@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Полный редактор с масштабированием картинки</title>
+<title>Редактор с VK Bridge</title>
 <style>
   body {
     font-family: Arial,sans-serif;
@@ -70,7 +70,7 @@
 </head>
 <body>
 
-<h2>Редактор картинок и текста с масштабированием картинки</h2>
+<h2>Редактор картинок и текста с VK Bridge</h2>
 
 <div class="flex-row" style="gap:16px;">
   <label for="bgFile" style="flex:1 0 120px;">Фон</label>
@@ -124,13 +124,25 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+(async () => {
+  try {
+    await vkBridge.send('VKWebAppInit');
+    console.log('VK Bridge инициализирован успешно');
+  } catch (e) {
+    console.warn('VK Bridge инициализация не удалась или недоступна', e);
+  }
+})();
+</script>
+
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let bgImage = null;
 let images = [];
 let objects = [];
-let selectedType = null; // 'text' or 'image'
+let selectedType = null; // 'text' или 'image'
 let selectedIndex = -1;
 let dragging = false;
 let dragOffsetX = 0;
@@ -167,7 +179,6 @@ class ImageObject {
   }
 }
 
-// Создаём миниатюру картинки небольшого размера для добавления
 function createThumbnail(image, maxSize = 300) {
   const tCanvas = document.createElement('canvas');
   const tCtx = tCanvas.getContext('2d');
@@ -184,19 +195,14 @@ function createThumbnail(image, maxSize = 300) {
   }
   tCtx.drawImage(image, 0, 0, tCanvas.width, tCanvas.height);
   
-  // Создаем новое изображение из канваса с миниатюрой
   const thumb = new Image();
   thumb.src = tCanvas.toDataURL();
   return thumb;
 }
 
-// Utility to measure text width with font styles
 function measureText(o) {
   ctx.save();
-  ctx.font = 
-    (o.italic ? 'italic ' : '') + 
-    (o.bold ? 'bold ' : '') + 
-    o.fontSize + 'px ' + o.fontFamily;
+  ctx.font = (o.italic ? 'italic ' : '') + (o.bold ? 'bold ' : '') + o.fontSize + 'px ' + o.fontFamily;
   const text = o.uppercase ? o.text.toUpperCase() : o.text;
   const metrics = ctx.measureText(text);
   ctx.restore();
@@ -206,8 +212,6 @@ function measureText(o) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
-
-  // Draw background
   if (bgImage) {
     if (document.getElementById('bgRadius').checked) {
       let r = 30;
@@ -231,7 +235,6 @@ function draw() {
   }
   ctx.restore();
 
-  // Draw images
   images.forEach(imgObj => {
     ctx.save();
     ctx.translate(imgObj.x + imgObj.width * imgObj.scale / 2, imgObj.y + imgObj.height * imgObj.scale / 2);
@@ -240,7 +243,6 @@ function draw() {
     ctx.restore();
   });
 
-  // Draw text objects
   objects.forEach(o => {
     ctx.save();
     ctx.translate(o.x, o.y);
@@ -248,7 +250,6 @@ function draw() {
     ctx.font = (o.italic ? 'italic ' : '') + (o.bold ? 'bold ' : '') + o.fontSize + 'px ' + o.fontFamily;
     ctx.textBaseline = 'top';
     const displayText = o.uppercase ? o.text.toUpperCase() : o.text;
-
     if (o.strokeWidth > 0) {
       ctx.lineWidth = o.strokeWidth;
       ctx.strokeStyle = o.strokeColor;
@@ -259,7 +260,6 @@ function draw() {
     ctx.restore();
   });
 
-  // Draw selection rectangle for text
   if (selectedType === 'text' && selectedIndex >= 0) {
     const o = objects[selectedIndex];
     ctx.save();
@@ -272,9 +272,7 @@ function draw() {
     ctx.rect(o.x - 2, o.y - 2, w + 4, h + 4);
     ctx.stroke();
     ctx.restore();
-  }
-  // Draw selection rectangle for image
-  else if (selectedType === 'image' && selectedIndex >= 0) {
+  } else if (selectedType === 'image' && selectedIndex >= 0) {
     const imgObj = images[selectedIndex];
     ctx.save();
     ctx.strokeStyle = 'yellow';
@@ -322,7 +320,6 @@ function updateControls() {
     document.getElementById('strokeColor').value = '#000000';
     document.getElementById('strokeWidth').value = 0;
   } else {
-    // Clear all controls if nothing selected
     document.getElementById('posX').value = '';
     document.getElementById('posY').value = '';
     document.getElementById('textValue').value = '';
@@ -377,7 +374,6 @@ function updateSelected() {
   }
 }
 
-// Add / Delete text buttons
 document.getElementById('addTextBtn').onclick = () => {
   objects.push(new TextObject({text: 'Новый текст'}));
   selectedType = 'text';
@@ -393,7 +389,6 @@ document.getElementById('deleteTextBtn').onclick = () => {
   }
 };
 
-// Bold / Italic / Uppercase buttons
 document.getElementById('boldBtn').onclick = () => {
   if (selectedType === 'text' && selectedIndex >= 0) {
     objects[selectedIndex].bold = !objects[selectedIndex].bold;
@@ -416,7 +411,6 @@ document.getElementById('uppercaseBtn').onclick = () => {
   }
 };
 
-// GUI inputs event listeners
 [
   'posX','posY','textValue','fontSelect','fontSizeRange','rotateText',
   'colorText','strokeColor','strokeWidth','bgRadius','imageScaleRange'
@@ -425,7 +419,6 @@ document.getElementById('uppercaseBtn').onclick = () => {
   else updateSelected();
 }));
 
-// Load background image
 document.getElementById('bgFile').addEventListener('change', (e) => {
   const f = e.target.files[0];
   if (!f) return;
@@ -437,13 +430,11 @@ document.getElementById('bgFile').addEventListener('change', (e) => {
   img.src = URL.createObjectURL(f);
 });
 
-// Load and add image object as миниатюра с регулировкой масштаба
 document.getElementById('addImgFile').addEventListener('change', (e) => {
   const f = e.target.files[0];
   if (!f) return;
   const img = new Image();
   img.onload = () => {
-    // Создаем миниатюру с максимальным размером 300px по большей стороне
     const thumb = createThumbnail(img, 300);
     thumb.onload = () => {
       images.push(new ImageObject(thumb, 50, 50, 1));
@@ -455,13 +446,11 @@ document.getElementById('addImgFile').addEventListener('change', (e) => {
   img.src = URL.createObjectURL(f);
 });
 
-// Hit testing for text (axis-aligned bounding box)
 function isPointInText(o, x, y) {
   const w = measureText(o);
   const h = o.fontSize;
   return (x >= o.x && x <= o.x + w && y >= o.y && y <= o.y + h);
 }
-// Hit testing for image (axis-aligned bounding box)
 function isPointInImage(imgObj, x, y) {
   const w = imgObj.width * imgObj.scale;
   const h = imgObj.height * imgObj.scale;
@@ -474,7 +463,6 @@ canvas.addEventListener('mousedown', (e) => {
   const mouseY = e.clientY - rect.top;
   dragging = false;
 
-  // Check text objects from top to bottom
   for (let i = objects.length - 1; i >= 0; i--) {
     if (isPointInText(objects[i], mouseX, mouseY)) {
       selectedType = 'text';
@@ -486,7 +474,6 @@ canvas.addEventListener('mousedown', (e) => {
       return;
     }
   }
-  // Check images
   for (let i = images.length - 1; i >= 0; i--) {
     if (isPointInImage(images[i], mouseX, mouseY)) {
       selectedType = 'image';
@@ -522,7 +509,6 @@ canvas.addEventListener('mousemove', (e) => {
 
 window.addEventListener('mouseup', () => { dragging = false; });
 
-// Save canvas to image file
 function downloadCanvas(format) {
   const tmpCanvas = document.createElement('canvas');
   tmpCanvas.width = 1920;
