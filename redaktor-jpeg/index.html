@@ -1,524 +1,594 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Редактор с текстом и картинкой</title>
-<!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Arvo&family=Cabin&family=Comfortaa&family=Dancing+Script&family=Exo+2&family=Fira+Sans&family=Indie+Flower&family=Josefin+Sans&family=Lobster&family=Merriweather&family=Montserrat&family=Noto+Sans&family=Oswald&family=PT+Sans&family=PT+Serif&family=Playfair+Display&family=Quicksand&family=Raleway&family=Roboto&family=Roboto+Slab&family=Ubuntu&family=Pacifico&display=swap" rel="stylesheet" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Полный редактор с масштабированием картинки</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:8px; display:flex; gap:8px; font-size:13px; }
-  #left { flex:0.7; }
-  #canvasWrap { background:#a6a6a6; border-radius:6px; padding:8px; width:800px; height:300px; }
-  canvas { background:#a6a6a6; display:block; border-radius:4px; cursor:grab; width:800px; height:300px; }
-  #controls { width:360px; padding:8px; border-left:1px solid #ddd; font-size:13px; }
-  label { display:block; margin-top:8px; font-size:13px; color:#222; }
-  input[type="text"], input[type="number"], select, input[type="range"], input[type="color"] { width:100%; padding:6px; box-sizing:border-box; margin-top:6px; font-size:13px; }
-  .row { display:flex; gap:6px; }
-  .btn { margin-top:6px; padding:6px 10px; cursor:pointer; border-radius:4px; border:1px solid #bbb; background:#fff; font-size:13px; transition: all 0.3s ease; user-select:none; }
-  .btn.active { background:#2b83ff; color:#fff; filter:brightness(0.8); }
-  .small { padding:4px 6px; font-size:12px; }
-  #objectList { margin-top:10px; max-height:120px; overflow-y:auto; font-size:13px; border:1px solid #ccc; padding:4px; border-radius:4px; }
-  #objectList div { padding:4px; cursor:pointer; }
-  #objectList div.selected { background:#2b83ff; color:#fff; border-radius:3px; }
-  .control-block { background:#fafafa; padding:6px; border-radius:4px; margin-top:10px; border:1px solid #eee; }
-  input[type="color"] { width:40px; height:40px; padding:0; border:none; vertical-align:middle; cursor:pointer; }
-  .flex-row { display:flex; align-items:center; gap:10px; margin-top:6px; }
-  .flex-grow { flex:1; }
-  .slider-container { display:flex; align-items:center; gap:4px; margin-top:4px; }
-  .slider-label { width:60px; font-size:12px; }
+  body {
+    font-family: Arial,sans-serif;
+    margin:8px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+  #canvasWrap {
+    background:#b0b0b0;
+    border-radius:6px;
+    padding:8px;
+    box-shadow:0 0 4px #999;
+  }
+  canvas {
+    background:#222;
+    cursor:grab;
+    width:960px;
+    height:384px;
+    user-select:none;
+    display:block;
+    border-radius:0px;
+  }
+  #controls {
+    width:960px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px;
+  }
+  label {
+    display:block;
+    font-size:13px;
+    margin-bottom:4px;
+  }
+  input, select, button {
+    width:100%;
+    padding:6px;
+    font-size:13px;
+    box-sizing:border-box;
+  }
+  button {
+    cursor:pointer;
+    border-radius:4px;
+    border:1px solid #bbb;
+    background:#fff;
+    user-select:none;
+  }
+  button.active {
+    background:#2b83ff;
+    color:#fff;
+  }
+  .flex-row {
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  #controls .flex-row > button {
+    width: auto;
+    min-width: 40px;
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
 
-<div id="left">
-  <h1 style="margin:0; font-size:16px;">Редактор с текстом и картинкой</h1>
+<h2>Редактор картинок и текста с масштабированием картинки</h2>
 
-  <div id="canvasWrap">
-    <canvas id="c" width="800" height="300"></canvas>
-  </div>
+<div class="flex-row" style="gap:16px;">
+  <label for="bgFile" style="flex:1 0 120px;">Фон</label>
+  <input type="file" id="bgFile" accept="image/*" style="flex:2 0 200px;" />
+  <label for="addImgFile" style="flex:1 0 140px;">Добавить картинку</label>
+  <input type="file" id="addImgFile" accept="image/*" style="flex:2 0 200px;" />
+</div>
 
-  <div style="margin-top:10px;">
-    <div class="flex-row">
-      <div class="flex-grow">
-        <label>Добавить картинку</label>
-        <input type="file" id="addImgFile1" accept="image/*" />
-      </div>
-      <div>
-        <input type="checkbox" id="flipImg1" />
-        <label for="flipImg1" style="margin:0;">Отразить горизонтально</label>
-      </div>
-    </div>
-
-    <div class="slider-container">
-      <label for="scaleImg1" class="slider-label">Масштаб</label>
-      <input type="range" id="scaleImg1" min="10" max="300" value="100" />
-      <div id="scaleVal1">100%</div>
-    </div>
-
-    <label>Загрузить фон</label>
-    <input type="file" id="bgFile" accept="image/*" />
-
-    <div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
-      <label><input type="checkbox" id="roundBgCheckbox" /> Закруглить углы фона</label>
-      <label>Цвет обводки фона</label>
-      <input type="color" id="bgStrokeColor" value="#ff0000" />
-      <label><input type="checkbox" id="bgStrokeCheckbox" /> Включить обводку фона</label>
-    </div>
-
-    <button id="savePngBtn" class="btn">Сохранить PNG</button>
-    <button id="saveJpgBtn" class="btn">Сохранить JPG</button>
-  </div>
+<div id="canvasWrap">
+  <canvas id="canvas" width="1920" height="768"></canvas>
 </div>
 
 <div id="controls">
-  <h2 style="font-size:16px;">Настройка текста</h2>
-
-  <label>Координаты X и Y</label>
-  <div class="row">
-    <input id="posX" type="number" />
-    <input id="posY" type="number" />
+  <div><label for="posX">X</label><input type="number" id="posX" /></div>
+  <div><label for="posY">Y</label><input type="number" id="posY" /></div>
+  <div style="grid-column:1/-1;"><label for="textValue">Текст</label><input type="text" id="textValue" /></div>
+  <div style="grid-column:1/-1;">
+    <label for="fontSelect">Шрифт</label>
+    <select id="fontSelect">
+      <option>Arial</option>
+      <option>Roboto</option>
+      <option>"Times New Roman"</option>
+      <option>Georgia</option>
+    </select>
+  </div>
+  <div><label for="fontSizeRange">Размер текста</label><input type="range" id="fontSizeRange" min="10" max="200" value="40" /></div>
+  <div><label for="rotateText">Поворот текста, °</label><input type="range" id="rotateText" min="0" max="360" value="0" /></div>
+  
+  <div class="flex-row" style="grid-column:1/-1; justify-content:flex-start;">
+    <button id="boldBtn" title="Жирный (B)">B</button>
+    <button id="italicBtn" title="Курсив (/)">/</button>
+    <button id="uppercaseBtn" title="Прописные буквы (ABC)">ABC</button>
   </div>
 
-  <label>Текст</label>
-  <input id="textValue" type="text" />
-
-  <label>Шрифт</label>
-  <select id="fontSelect">
-    <option>Arial</option><option>Roboto</option><option>Times New Roman</option><option>Georgia</option><option>Impact</option>
-    <option>Verdana</option><option>Tahoma</option><option>Courier New</option><option>Comic Sans MS</option><option>Lucida Console</option>
-    <option>Palatino Linotype</option><option>Trebuchet MS</option><option>Arial Black</option><option>Gill Sans</option><option>Helvetica</option>
-    <option>Franklin Gothic Medium</option><option>Garamond</option><option>Brush Script MT</option><option>Lucida Handwriting</option><option>Segoe UI</option>
-    <option>Century Gothic</option><option>Rockwell</option><option>Lucida Bright</option><option>Indie Flower</option><option>Pacifico</option>
-    <option>Oswald</option><option>Lobster</option><option>Open Sans</option><option>PT Sans</option><option>Merriweather</option>
-    <option>Raleway</option><option>Ubuntu</option><option>Playfair Display</option><option>Montserrat</option><option>Roboto Slab</option>
-    <option>Noto Sans</option><option>Cabin</option><option>Dancing Script</option><option>Comfortaa</option><option>Arvo</option>
-    <option>Vollkorn</option><option>Quicksand</option><option>PT Serif</option><option>Fira Sans</option><option>Exo 2</option>
-    <option>Karla</option><option>Josefin Sans</option><option>Anton</option>
-  </select>
-
-  <label>Размер текста (px)</label>
-  <input id="fontSizeRange" type="range" min="10" max="200" />
-
-  <label><input type="checkbox" id="uppercaseCheckbox" /> Прописные буквы</label>
-  <label>Поворот текста (°)</label>
-  <input id="rotateText" type="range" min="0" max="360" />
-
-  <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
-    <button id="boldBtn" class="btn small">B</button>
-    <button id="italicBtn" class="btn small">/</button>
-    <label for="colorText" style="margin:0 6px;">Цвет текста</label>
-    <input id="colorText" type="color" />
-    <label for="strokeColor" style="margin-left:12px;">Цвет обводки</label>
-    <input id="strokeColor" type="color" />
+  <div><label for="colorText">Цвет текста</label><input type="color" id="colorText" value="#ffffff" /></div>
+  <div><label for="strokeColor">Цвет обводки</label><input type="color" id="strokeColor" value="#000000" /></div>
+  <div><label for="strokeWidth">Толщина обводки</label><input type="range" id="strokeWidth" min="0" max="20" value="0" /></div>
+  
+  <div class="flex-row" style="gap:8px;">
+    <label for="bgRadius" style="margin-bottom:0;">Скруглить фон</label>
+    <input type="checkbox" id="bgRadius" />
   </div>
 
-  <label>Обводка (px)</label>
-  <input id="strokeWidth" type="number" min="0" />
+  <div><label for="imageScaleRange">Масштаб картинки</label><input type="range" id="imageScaleRange" min="0.1" max="3" step="0.01" value="1" disabled /></div>
 
-  <div class="control-block">
-    <button id="addTextBtn" class="btn">+ Добавить текст</button>
-    <button id="deleteTextBtn" class="btn">Удалить текст</button>
+  <div class="flex-row" style="grid-column:1/-1; gap:8px;">
+    <button id="addTextBtn">+ Текст</button>
+    <button id="deleteTextBtn">- Текст</button>
+    <button id="saveJPG">Сохранить JPEG</button>
+    <button id="savePNG">Сохранить PNG</button>
   </div>
-
-  <div id="objectList"></div>
 </div>
 
 <script>
-  const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
-  let bgImage = null, images = [], objects = [], selectedIndex = -1, selectedType = null;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let bgImage = null;
+let images = [];
+let objects = [];
+let selectedType = null; // 'text' or 'image'
+let selectedIndex = -1;
+let dragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
 
-  // Для drag'n'drop
-  let dragging = false;
-  let dragOffsetX = 0, dragOffsetY = 0;
-
-  // Фабрики объектов 
-  function TextObject(opts) {
-    return {
-      type: 'text',
-      x: opts.x || 100,
-      y: opts.y || 100,
-      text: opts.text || 'текст',
-      fontFamily: opts.fontFamily || 'Arial',
-      fontSize: opts.fontSize || 40,
-      bold: !!opts.bold,
-      italic: !!opts.italic,
-      color: opts.color || '#fff',
-      strokeWidth: opts.strokeWidth || 0,
-      strokeColor: opts.strokeColor || '#000',
-      rotation: opts.rotation || 0,
-      uppercase: !!opts.uppercase
-    };
+class TextObject {
+  constructor(opts = {}) {
+    this.type = 'text';
+    this.x = opts.x || 100;
+    this.y = opts.y || 100;
+    this.text = opts.text || 'текст';
+    this.fontFamily = opts.fontFamily || 'Arial';
+    this.fontSize = opts.fontSize || 40;
+    this.bold = false;
+    this.italic = false;
+    this.uppercase = false;
+    this.color = '#ffffff';
+    this.strokeColor = '#000000';
+    this.strokeWidth = 0;
+    this.rotation = 0;
   }
-  function ImageObject(img, x = 0, y = 0, w = null, h = null, aspectRatio = null) {
-    w = w || img.width; h = h || img.height; aspectRatio = aspectRatio || w / h;
-    return { img, x, y, width: w, height: h, type: 'image', aspectRatio, rotation: 0, flipX: false, scale: 1 };
-  }
+}
 
-  // Закругление углов
-  function roundRect(ctx, x, y, w, h, r) {
-    if (w < 2 * r) r = w / 2;
-    if (h < 2 * r) r = h / 2;
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
+class ImageObject {
+  constructor(img, x = 0, y = 0, scale = 1) {
+    this.type = 'image';
+    this.img = img;
+    this.x = x;
+    this.y = y;
+    this.width = img.width;
+    this.height = img.height;
+    this.scale = scale;
+    this.rotation = 0;
   }
+}
 
-  // Проверка попадания в текст (приближенно прямоугольник)
-  function isPointInText(obj, x, y) {
+// Создаём миниатюру картинки небольшого размера для добавления
+function createThumbnail(image, maxSize = 300) {
+  const tCanvas = document.createElement('canvas');
+  const tCtx = tCanvas.getContext('2d');
+  let scale = 1;
+  
+  if (image.width > image.height) {
+    scale = maxSize / image.width;
+    tCanvas.width = maxSize;
+    tCanvas.height = image.height * scale;
+  } else {
+    scale = maxSize / image.height;
+    tCanvas.height = maxSize;
+    tCanvas.width = image.width * scale;
+  }
+  tCtx.drawImage(image, 0, 0, tCanvas.width, tCanvas.height);
+  
+  // Создаем новое изображение из канваса с миниатюрой
+  const thumb = new Image();
+  thumb.src = tCanvas.toDataURL();
+  return thumb;
+}
+
+// Utility to measure text width with font styles
+function measureText(o) {
+  ctx.save();
+  ctx.font = 
+    (o.italic ? 'italic ' : '') + 
+    (o.bold ? 'bold ' : '') + 
+    o.fontSize + 'px ' + o.fontFamily;
+  const text = o.uppercase ? o.text.toUpperCase() : o.text;
+  const metrics = ctx.measureText(text);
+  ctx.restore();
+  return metrics.width;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+
+  // Draw background
+  if (bgImage) {
+    if (document.getElementById('bgRadius').checked) {
+      let r = 30;
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(canvas.width - r, 0);
+      ctx.quadraticCurveTo(canvas.width, 0, canvas.width, r);
+      ctx.lineTo(canvas.width, canvas.height - r);
+      ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - r, canvas.height);
+      ctx.lineTo(r, canvas.height);
+      ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      ctx.clip();
+    }
+    ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  ctx.restore();
+
+  // Draw images
+  images.forEach(imgObj => {
     ctx.save();
-    ctx.font = (obj.italic ? 'italic ' : '') + (obj.bold ? 'bold ' : '') + obj.fontSize + 'px "' + obj.fontFamily + '"';
-    ctx.textBaseline = 'top';
-    // Размер текста
-    const text = obj.uppercase ? obj.text.toUpperCase() : obj.text;
-    const width = ctx.measureText(text).width;
-    const height = obj.fontSize; // приближенно высота шрифта = размеру
+    ctx.translate(imgObj.x + imgObj.width * imgObj.scale / 2, imgObj.y + imgObj.height * imgObj.scale / 2);
+    ctx.rotate(imgObj.rotation * Math.PI / 180);
+    ctx.drawImage(imgObj.img, -imgObj.width * imgObj.scale / 2, -imgObj.height * imgObj.scale / 2, imgObj.width * imgObj.scale, imgObj.height * imgObj.scale);
     ctx.restore();
-
-    // Текст можно повернуть, но для упрощения считаем без поворота
-    return x >= obj.x && x <= obj.x + width && y >= obj.y && y <= obj.y + height;
-  }
-
-  // Проверка попадания в изображение
-  function isPointInImage(imgObj, x, y) {
-    let w = imgObj.width * imgObj.scale;
-    let h = imgObj.height * imgObj.scale;
-    // Координаты и размер с учётом отражения и поворота опускаем, т.к. упрощаем попадание прямоугольником
-    return x >= imgObj.x && x <= imgObj.x + w && y >= imgObj.y && y <= imgObj.y + h;
-  }
-
-  // Отрисовка
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Фон
-    if (bgImage) {
-      if (document.getElementById('roundBgCheckbox').checked) {
-        ctx.save();
-        roundRect(ctx, 0, 0, canvas.width, canvas.height, 20);
-        ctx.clip();
-        ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-        ctx.restore();
-      } else {
-        ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-      }
-    } else {
-      if (document.getElementById('roundBgCheckbox').checked) {
-        ctx.save();
-        roundRect(ctx, 0, 0, canvas.width, canvas.height, 20);
-        ctx.fillStyle = '#a6a6a6';
-        ctx.fill();
-        ctx.restore();
-      } else {
-        ctx.fillStyle = '#a6a6a6'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-    }
-
-    // Обводка фона
-    if (document.getElementById('bgStrokeCheckbox').checked) {
-      ctx.save();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = document.getElementById('bgStrokeColor').value;
-      if (document.getElementById('roundBgCheckbox').checked)
-        roundRect(ctx, 0, 0, canvas.width, canvas.height, 20);
-      else ctx.strokeRect(0, 0, canvas.width, canvas.height);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Изображения
-    images.forEach(imgObj => {
-      ctx.save();
-      ctx.translate(imgObj.x + (imgObj.width * imgObj.scale) / 2, imgObj.y + (imgObj.height * imgObj.scale) / 2);
-      ctx.scale(imgObj.flipX ? -1 : 1, 1);
-      ctx.rotate(imgObj.rotation * Math.PI / 180);
-      ctx.drawImage(imgObj.img, -(imgObj.width * imgObj.scale) / 2, -(imgObj.height * imgObj.scale) / 2,
-        imgObj.width * imgObj.scale, imgObj.height * imgObj.scale);
-      ctx.restore();
-    });
-
-    // Текст
-    objects.forEach(o => {
-      ctx.save();
-      ctx.translate(o.x, o.y);
-      ctx.rotate(o.rotation * Math.PI / 180);
-      ctx.font = (o.italic ? 'italic ' : '') + (o.bold ? 'bold ' : '') + o.fontSize + 'px "' + o.fontFamily + '"';
-      ctx.textBaseline = 'top';
-      const textDraw = o.uppercase ? o.text.toUpperCase() : o.text;
-      if (o.strokeWidth > 0) {
-        ctx.lineWidth = o.strokeWidth;
-        ctx.strokeStyle = o.strokeColor;
-        ctx.strokeText(textDraw, 0, 0);
-      }
-      ctx.fillStyle = o.color;
-      ctx.fillText(textDraw, 0, 0);
-      ctx.restore();
-    });
-
-    updateObjectList();
-  }
-
-  // Обновление списка объектов (текста для выбора)
-  function updateObjectList() {
-    const list = document.getElementById('objectList');
-    list.innerHTML = '';
-    objects.forEach((obj, i) => {
-      const div = document.createElement('div');
-      div.textContent = obj.text || 'текст ' + i;
-      if (i === selectedIndex && selectedType === 'text') div.classList.add('selected');
-      div.onclick = () => {
-        selectedIndex = i;
-        selectedType = 'text';
-        updateControls();
-        draw();
-      };
-      list.appendChild(div);
-    });
-  }
-
-  // Синхронизация контролов с выбранным объектом
-  function updateControls() {
-    if (selectedType === 'text' && selectedIndex >= 0) {
-      const obj = objects[selectedIndex];
-      document.getElementById('posX').value = obj.x;
-      document.getElementById('posY').value = obj.y;
-      document.getElementById('textValue').value = obj.text;
-      document.getElementById('fontSelect').value = obj.fontFamily;
-      document.getElementById('fontSizeRange').value = obj.fontSize;
-      document.getElementById('uppercaseCheckbox').checked = obj.uppercase;
-      document.getElementById('rotateText').value = obj.rotation;
-      document.getElementById('boldBtn').classList.toggle('active', obj.bold);
-      document.getElementById('italicBtn').classList.toggle('active', obj.italic);
-      document.getElementById('colorText').value = obj.color;
-      document.getElementById('strokeColor').value = obj.strokeColor;
-      document.getElementById('strokeWidth').value = obj.strokeWidth;
-    } else {
-      // Если ничего не выбрано, очистить
-      document.getElementById('posX').value = '';
-      document.getElementById('posY').value = '';
-      document.getElementById('textValue').value = '';
-      document.getElementById('fontSelect').value = 'Arial';
-      document.getElementById('fontSizeRange').value = 40;
-      document.getElementById('uppercaseCheckbox').checked = false;
-      document.getElementById('rotateText').value = 0;
-      document.getElementById('boldBtn').classList.remove('active');
-      document.getElementById('italicBtn').classList.remove('active');
-      document.getElementById('colorText').value = '#ffffff';
-      document.getElementById('strokeColor').value = '#000000';
-      document.getElementById('strokeWidth').value = 0;
-    }
-  }
-
-  // Обновление данных выбранного текста из контролов
-  function updateSelectedText() {
-    if (selectedType === 'text' && selectedIndex >= 0) {
-      const obj = objects[selectedIndex];
-      obj.x = parseInt(document.getElementById('posX').value) || obj.x;
-      obj.y = parseInt(document.getElementById('posY').value) || obj.y;
-      obj.text = document.getElementById('textValue').value || obj.text;
-      obj.fontFamily = document.getElementById('fontSelect').value;
-      obj.fontSize = parseInt(document.getElementById('fontSizeRange').value) || obj.fontSize;
-      obj.uppercase = document.getElementById('uppercaseCheckbox').checked;
-      obj.rotation = parseInt(document.getElementById('rotateText').value) || obj.rotation;
-      obj.color = document.getElementById('colorText').value;
-      obj.strokeColor = document.getElementById('strokeColor').value;
-      obj.strokeWidth = parseInt(document.getElementById('strokeWidth').value) || 0;
-      draw();
-    }
-  }
-
-  // Добавление текста
-  document.getElementById('addTextBtn').onclick = () => {
-    const t = TextObject({ x: 100, y: 100, text: 'Новый текст', fontFamily: 'Arial', fontSize: 40, color: '#fff' });
-    objects.push(t);
-    selectedType = 'text';
-    selectedIndex = objects.length - 1;
-    updateControls();
-    draw();
-  };
-
-  // Удаление выбранного текста
-  document.getElementById('deleteTextBtn').onclick = () => {
-    if (selectedType === 'text' && selectedIndex >= 0) {
-      objects.splice(selectedIndex, 1);
-      selectedType = null;
-      selectedIndex = -1;
-      updateControls();
-      draw();
-    }
-  };
-
-  // При изменении контролов текста — обновлять параметры объекта
-  ['posX', 'posY', 'textValue', 'fontSelect', 'fontSizeRange', 'uppercaseCheckbox', 'rotateText', 'colorText', 'strokeColor', 'strokeWidth'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateSelectedText);
   });
 
-  // Кнопки жирного и курсивного текста — переключать и обновлять
-  const boldBtn = document.getElementById('boldBtn');
-  const italicBtn = document.getElementById('italicBtn');
-  boldBtn.onclick = () => {
-    if (selectedType === 'text' && selectedIndex >= 0) {
-      const obj = objects[selectedIndex];
-      obj.bold = !obj.bold;
-      boldBtn.classList.toggle('active', obj.bold);
-      draw();
-    }
-  };
-  italicBtn.onclick = () => {
-    if (selectedType === 'text' && selectedIndex >= 0) {
-      const obj = objects[selectedIndex];
-      obj.italic = !obj.italic;
-      italicBtn.classList.toggle('active', obj.italic);
-      draw();
-    }
-  };
+  // Draw text objects
+  objects.forEach(o => {
+    ctx.save();
+    ctx.translate(o.x, o.y);
+    ctx.rotate(o.rotation * Math.PI / 180);
+    ctx.font = (o.italic ? 'italic ' : '') + (o.bold ? 'bold ' : '') + o.fontSize + 'px ' + o.fontFamily;
+    ctx.textBaseline = 'top';
+    const displayText = o.uppercase ? o.text.toUpperCase() : o.text;
 
-  // Загрузка картинки
-  document.getElementById('addImgFile1').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const img = new Image();
-    img.onload = () => {
-      const aspectRatio = img.width / img.height;
-      const newWidth = 150;
-      images = [ImageObject(img, 50, 50, newWidth, newWidth / aspectRatio, aspectRatio)];
-      // Обновить контролы для масштаба и отражения
-      document.getElementById('scaleImg1').value = 100;
-      document.getElementById('scaleVal1').textContent = '100%';
-      document.getElementById('flipImg1').checked = false;
-      draw();
-    };
-    img.src = URL.createObjectURL(file);
+    if (o.strokeWidth > 0) {
+      ctx.lineWidth = o.strokeWidth;
+      ctx.strokeStyle = o.strokeColor;
+      ctx.strokeText(displayText, 0, 0);
+    }
+    ctx.fillStyle = o.color;
+    ctx.fillText(displayText, 0, 0);
+    ctx.restore();
   });
 
-  // Масштаб
-  const scaleSlider = document.getElementById('scaleImg1');
-  const scaleVal = document.getElementById('scaleVal1');
-  scaleSlider.addEventListener('input', () => {
-    if (images.length > 0) {
-      images[0].scale = scaleSlider.value / 100;
-      scaleVal.textContent = scaleSlider.value + '%';
-      draw();
-    }
-  });
+  // Draw selection rectangle for text
+  if (selectedType === 'text' && selectedIndex >= 0) {
+    const o = objects[selectedIndex];
+    ctx.save();
+    ctx.font = (o.italic ? 'italic ' : '') + (o.bold ? 'bold ' : '') + o.fontSize + 'px ' + o.fontFamily;
+    const w = measureText(o);
+    const h = o.fontSize;
+    ctx.strokeStyle = 'yellow';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.rect(o.x - 2, o.y - 2, w + 4, h + 4);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // Draw selection rectangle for image
+  else if (selectedType === 'image' && selectedIndex >= 0) {
+    const imgObj = images[selectedIndex];
+    ctx.save();
+    ctx.strokeStyle = 'yellow';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.rect(imgObj.x - 2, imgObj.y - 2, imgObj.width * imgObj.scale + 4, imgObj.height * imgObj.scale + 4);
+    ctx.stroke();
+    ctx.restore();
+  }
 
-  // Отражение
-  document.getElementById('flipImg1').addEventListener('change', (e) => {
-    if (images.length > 0) {
-      images[0].flipX = e.target.checked;
-      draw();
-    }
-  });
+  updateControls();
+}
 
-  // Загрузка фона
-  document.getElementById('bgFile').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const img = new Image();
-    img.onload = () => {
-      bgImage = img;
-      draw();
-    };
-    img.src = URL.createObjectURL(file);
-  });
+function updateControls() {
+  if (selectedType === 'text' && selectedIndex >= 0) {
+    const o = objects[selectedIndex];
+    document.getElementById('posX').value = Math.round(o.x);
+    document.getElementById('posY').value = Math.round(o.y);
+    document.getElementById('textValue').value = o.text;
+    document.getElementById('fontSelect').value = o.fontFamily;
+    document.getElementById('fontSizeRange').value = o.fontSize;
+    document.getElementById('rotateText').value = o.rotation;
+    document.getElementById('boldBtn').classList.toggle('active', o.bold);
+    document.getElementById('italicBtn').classList.toggle('active', o.italic);
+    document.getElementById('uppercaseBtn').classList.toggle('active', o.uppercase);
+    document.getElementById('colorText').value = o.color;
+    document.getElementById('strokeColor').value = o.strokeColor;
+    document.getElementById('strokeWidth').value = o.strokeWidth;
+    document.getElementById('imageScaleRange').disabled = true;
+  } else if (selectedType === 'image' && selectedIndex >= 0) {
+    const imgObj = images[selectedIndex];
+    document.getElementById('posX').value = Math.round(imgObj.x);
+    document.getElementById('posY').value = Math.round(imgObj.y);
+    document.getElementById('imageScaleRange').value = imgObj.scale.toFixed(2);
+    document.getElementById('imageScaleRange').disabled = false;
+    // Clear text controls
+    document.getElementById('textValue').value = '';
+    document.getElementById('fontSelect').value = 'Arial';
+    document.getElementById('fontSizeRange').value = 40;
+    document.getElementById('rotateText').value = 0;
+    document.getElementById('boldBtn').classList.remove('active');
+    document.getElementById('italicBtn').classList.remove('active');
+    document.getElementById('uppercaseBtn').classList.remove('active');
+    document.getElementById('colorText').value = '#ffffff';
+    document.getElementById('strokeColor').value = '#000000';
+    document.getElementById('strokeWidth').value = 0;
+  } else {
+    // Clear all controls if nothing selected
+    document.getElementById('posX').value = '';
+    document.getElementById('posY').value = '';
+    document.getElementById('textValue').value = '';
+    document.getElementById('fontSelect').value = 'Arial';
+    document.getElementById('fontSizeRange').value = 40;
+    document.getElementById('rotateText').value = 0;
+    document.getElementById('boldBtn').classList.remove('active');
+    document.getElementById('italicBtn').classList.remove('active');
+    document.getElementById('uppercaseBtn').classList.remove('active');
+    document.getElementById('colorText').value = '#ffffff';
+    document.getElementById('strokeColor').value = '#000000';
+    document.getElementById('strokeWidth').value = 0;
+    document.getElementById('imageScaleRange').value = 1;
+    document.getElementById('imageScaleRange').disabled = true;
+  }
+}
 
-  // Сохранение PNG
-  document.getElementById('savePngBtn').onclick = () => {
-    const ow = canvas.width, oh = canvas.height;
-    canvas.width = 1920; canvas.height = 768;
+function updateSelected() {
+  if (selectedType === 'text' && selectedIndex >= 0) {
+    const o = objects[selectedIndex];
+    const xVal = parseInt(document.getElementById('posX').value);
+    const yVal = parseInt(document.getElementById('posY').value);
+    if (!isNaN(xVal)) o.x = xVal;
+    if (!isNaN(yVal)) o.y = yVal;
+
+    const textVal = document.getElementById('textValue').value;
+    if (textVal !== '') o.text = textVal;
+
+    o.fontFamily = document.getElementById('fontSelect').value;
+    const fSize = parseInt(document.getElementById('fontSizeRange').value);
+    if (!isNaN(fSize)) o.fontSize = fSize;
+
+    const rotation = parseInt(document.getElementById('rotateText').value);
+    if (!isNaN(rotation)) o.rotation = rotation;
+
+    o.color = document.getElementById('colorText').value;
+    o.strokeColor = document.getElementById('strokeColor').value;
+
+    const strokeWidth = parseInt(document.getElementById('strokeWidth').value);
+    o.strokeWidth = isNaN(strokeWidth) ? 0 : strokeWidth;
     draw();
-    const link = document.createElement('a');
-    link.download = 'canvas.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    canvas.width = ow; canvas.height = oh;
-    draw();
-  };
+  } else if (selectedType === 'image' && selectedIndex >= 0) {
+    const imgObj = images[selectedIndex];
+    const xVal = parseInt(document.getElementById('posX').value);
+    const yVal = parseInt(document.getElementById('posY').value);
+    if (!isNaN(xVal)) imgObj.x = xVal;
+    if (!isNaN(yVal)) imgObj.y = yVal;
 
-  // Сохранение JPG
-  document.getElementById('saveJpgBtn').onclick = () => {
-    const ow = canvas.width, oh = canvas.height;
-    canvas.width = 1920; canvas.height = 768;
+    const scaleVal = parseFloat(document.getElementById('imageScaleRange').value);
+    if (!isNaN(scaleVal) && scaleVal > 0) imgObj.scale = scaleVal;
     draw();
-    const link = document.createElement('a');
-    link.download = 'canvas.jpg';
-    link.href = canvas.toDataURL('image/jpeg', 0.95);
-    link.click();
-    canvas.width = ow; canvas.height = oh;
-    draw();
-  };
+  }
+}
 
-  // Обработка мыши для drag'n'drop
-  canvas.addEventListener('mousedown', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    // Проверяем сначала текст (последний добавленный сверху)
-    for (let i = objects.length - 1; i >= 0; i--) {
-      if (isPointInText(objects[i], mouseX, mouseY)) {
-        selectedType = 'text';
-        selectedIndex = i;
-        dragOffsetX = mouseX - objects[i].x;
-        dragOffsetY = mouseY - objects[i].y;
-        dragging = true;
-        updateControls();
-        draw();
-        return;
-      }
-    }
-    // Потом картинки
-    for (let i = images.length - 1; i >= 0; i--) {
-      if (isPointInImage(images[i], mouseX, mouseY)) {
-        selectedType = 'image';
-        selectedIndex = i;
-        dragOffsetX = mouseX - images[i].x;
-        dragOffsetY = mouseY - images[i].y;
-        dragging = true;
-        updateControls();
-        draw();
-        return;
-      }
-    }
-    // Если не кликнули ни на что — сброс выбора
+// Add / Delete text buttons
+document.getElementById('addTextBtn').onclick = () => {
+  objects.push(new TextObject({text: 'Новый текст'}));
+  selectedType = 'text';
+  selectedIndex = objects.length - 1;
+  draw();
+};
+document.getElementById('deleteTextBtn').onclick = () => {
+  if (selectedType === 'text' && selectedIndex >= 0) {
+    objects.splice(selectedIndex, 1);
     selectedType = null;
     selectedIndex = -1;
-    updateControls();
     draw();
-  });
+  }
+};
 
-  canvas.addEventListener('mousemove', (e) => {
-    if (!dragging) return;
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    if (selectedType === 'text' && selectedIndex >= 0) {
-      const obj = objects[selectedIndex];
-      obj.x = mouseX - dragOffsetX;
-      obj.y = mouseY - dragOffsetY;
-      updateControls();
+// Bold / Italic / Uppercase buttons
+document.getElementById('boldBtn').onclick = () => {
+  if (selectedType === 'text' && selectedIndex >= 0) {
+    objects[selectedIndex].bold = !objects[selectedIndex].bold;
+    document.getElementById('boldBtn').classList.toggle('active', objects[selectedIndex].bold);
+    draw();
+  }
+};
+document.getElementById('italicBtn').onclick = () => {
+  if (selectedType === 'text' && selectedIndex >= 0) {
+    objects[selectedIndex].italic = !objects[selectedIndex].italic;
+    document.getElementById('italicBtn').classList.toggle('active', objects[selectedIndex].italic);
+    draw();
+  }
+};
+document.getElementById('uppercaseBtn').onclick = () => {
+  if (selectedType === 'text' && selectedIndex >= 0) {
+    objects[selectedIndex].uppercase = !objects[selectedIndex].uppercase;
+    document.getElementById('uppercaseBtn').classList.toggle('active', objects[selectedIndex].uppercase);
+    draw();
+  }
+};
+
+// GUI inputs event listeners
+[
+  'posX','posY','textValue','fontSelect','fontSizeRange','rotateText',
+  'colorText','strokeColor','strokeWidth','bgRadius','imageScaleRange'
+].forEach(id => document.getElementById(id).addEventListener('input', () => {
+  if(id === 'bgRadius') draw();
+  else updateSelected();
+}));
+
+// Load background image
+document.getElementById('bgFile').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const img = new Image();
+  img.onload = () => {
+    bgImage = img;
+    draw();
+  };
+  img.src = URL.createObjectURL(f);
+});
+
+// Load and add image object as миниатюра с регулировкой масштаба
+document.getElementById('addImgFile').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const img = new Image();
+  img.onload = () => {
+    // Создаем миниатюру с максимальным размером 300px по большей стороне
+    const thumb = createThumbnail(img, 300);
+    thumb.onload = () => {
+      images.push(new ImageObject(thumb, 50, 50, 1));
+      selectedType = 'image';
+      selectedIndex = images.length - 1;
       draw();
-    }
-    if (selectedType === 'image' && selectedIndex >= 0) {
-      const imgObj = images[selectedIndex];
-      imgObj.x = mouseX - dragOffsetX;
-      imgObj.y = mouseY - dragOffsetY;
-      updateControls();
+    };
+  };
+  img.src = URL.createObjectURL(f);
+});
+
+// Hit testing for text (axis-aligned bounding box)
+function isPointInText(o, x, y) {
+  const w = measureText(o);
+  const h = o.fontSize;
+  return (x >= o.x && x <= o.x + w && y >= o.y && y <= o.y + h);
+}
+// Hit testing for image (axis-aligned bounding box)
+function isPointInImage(imgObj, x, y) {
+  const w = imgObj.width * imgObj.scale;
+  const h = imgObj.height * imgObj.scale;
+  return (x >= imgObj.x && x <= imgObj.x + w && y >= imgObj.y && y <= imgObj.y + h);
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  dragging = false;
+
+  // Check text objects from top to bottom
+  for (let i = objects.length - 1; i >= 0; i--) {
+    if (isPointInText(objects[i], mouseX, mouseY)) {
+      selectedType = 'text';
+      selectedIndex = i;
+      dragOffsetX = mouseX - objects[i].x;
+      dragOffsetY = mouseY - objects[i].y;
+      dragging = true;
       draw();
+      return;
     }
-  });
-
-  window.addEventListener('mouseup', (e) => {
-    dragging = false;
-  });
-
-  // Инициализация
-  updateControls();
+  }
+  // Check images
+  for (let i = images.length - 1; i >= 0; i--) {
+    if (isPointInImage(images[i], mouseX, mouseY)) {
+      selectedType = 'image';
+      selectedIndex = i;
+      dragOffsetX = mouseX - images[i].x;
+      dragOffsetY = mouseY - images[i].y;
+      dragging = true;
+      draw();
+      return;
+    }
+  }
+  selectedType = null;
+  selectedIndex = -1;
   draw();
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  if (selectedType === 'text' && selectedIndex >= 0) {
+    objects[selectedIndex].x = mouseX - dragOffsetX;
+    objects[selectedIndex].y = mouseY - dragOffsetY;
+    draw();
+  } else if (selectedType === 'image' && selectedIndex >= 0) {
+    images[selectedIndex].x = mouseX - dragOffsetX;
+    images[selectedIndex].y = mouseY - dragOffsetY;
+    draw();
+  }
+});
+
+window.addEventListener('mouseup', () => { dragging = false; });
+
+// Save canvas to image file
+function downloadCanvas(format) {
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = 1920;
+  tmpCanvas.height = 768;
+  const tmpCtx = tmpCanvas.getContext('2d');
+
+  tmpCtx.save();
+  if (bgImage) {
+    if (document.getElementById('bgRadius').checked) {
+      const r = 30;
+      tmpCtx.beginPath();
+      tmpCtx.moveTo(r, 0);
+      tmpCtx.lineTo(1920 - r, 0);
+      tmpCtx.quadraticCurveTo(1920, 0, 1920, r);
+      tmpCtx.lineTo(1920, 768 - r);
+      tmpCtx.quadraticCurveTo(1920, 768, 1920 - r, 768);
+      tmpCtx.lineTo(r, 768);
+      tmpCtx.quadraticCurveTo(0, 768, 0, 768 - r);
+      tmpCtx.lineTo(0, r);
+      tmpCtx.quadraticCurveTo(0, 0, r, 0);
+      tmpCtx.closePath();
+      tmpCtx.clip();
+    }
+    tmpCtx.drawImage(bgImage, 0, 0, 1920, 768);
+  } else {
+    tmpCtx.fillStyle = '#222';
+    tmpCtx.fillRect(0, 0, 1920, 768);
+  }
+  tmpCtx.restore();
+
+  images.forEach(imgObj => {
+    tmpCtx.save();
+    tmpCtx.translate(imgObj.x + imgObj.width * imgObj.scale / 2, imgObj.y + imgObj.height * imgObj.scale / 2);
+    tmpCtx.rotate(imgObj.rotation * Math.PI / 180);
+    tmpCtx.drawImage(imgObj.img, -imgObj.width * imgObj.scale / 2, -imgObj.height * imgObj.scale / 2, imgObj.width * imgObj.scale, imgObj.height * imgObj.scale);
+    tmpCtx.restore();
+  });
+
+  objects.forEach(o => {
+    tmpCtx.save();
+    tmpCtx.translate(o.x, o.y);
+    tmpCtx.rotate(o.rotation * Math.PI / 180);
+    tmpCtx.font = (o.italic ? 'italic ' : '') + (o.bold ? 'bold ' : '') + o.fontSize + 'px ' + o.fontFamily;
+    tmpCtx.textBaseline = 'top';
+    const displayText = o.uppercase ? o.text.toUpperCase() : o.text;
+    if (o.strokeWidth > 0) {
+      tmpCtx.lineWidth = o.strokeWidth;
+      tmpCtx.strokeStyle = o.strokeColor;
+      tmpCtx.strokeText(displayText, 0, 0);
+    }
+    tmpCtx.fillStyle = o.color;
+    tmpCtx.fillText(displayText, 0, 0);
+    tmpCtx.restore();
+  });
+
+  const type = (format === 'jpeg') ? 'image/jpeg' : 'image/png';
+  const link = document.createElement('a');
+  link.download = (format === 'jpeg' ? 'image.jpg' : 'image.png');
+  link.href = tmpCanvas.toDataURL(type);
+  link.click();
+}
+
+document.getElementById('saveJPG').onclick = () => downloadCanvas('jpeg');
+document.getElementById('savePNG').onclick = () => downloadCanvas('png');
+
+draw();
 </script>
 
 </body>
