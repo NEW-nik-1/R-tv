@@ -252,8 +252,8 @@ function refreshObjectList(){
 
 function selectObject(index,type){
   selectedIndex=index; selectedType=type;
-  if(type==='text') updateTextPanel();
-  else updateTextPanel(null); // очистить панель если выделен не текст
+  if(type==='text') updateTextPanel(objects[selectedIndex]);
+  else updateTextPanel(null); 
   draw();
 }
 function updateTextPanel(t){
@@ -284,172 +284,34 @@ function updateTextPanel(t){
   }
 }
 
-document.getElementById('addTextBtn').onclick=()=>{
-  const t=TextObject({x:100,y:100,text:'Новый текст',fontFamily:'Arial',fontSize:40,color:'#fff'});
-  objects.push(t); selectObject(objects.length-1,'text'); draw();
-};
-document.getElementById('deleteBtn').onclick=()=>{
-  if(selectedType==='text' && selectedIndex>=0){ objects.splice(selectedIndex,1); selectedIndex=-1; selectedType=null; draw(); }
-  if(selectedType==='image' && selectedIndex>=0){ images.splice(selectedIndex,1); selectedIndex=-1; selectedType=null; draw(); }
-};
-document.getElementById('clearBtn').onclick=()=>{
-  objects=[]; images=[]; selectedIndex=-1; selectedType=null; updateTextPanel(null); draw();
-};
+document.getElementById('addTextBtn').onclick=()=>{ const t=TextObject({x:100,y:100,text:'Новый текст',fontFamily:'Arial',fontSize:40,color:'#fff'}); objects.push(t); selectObject(objects.length-1,'text'); draw(); };
+document.getElementById('deleteBtn').onclick=()=>{ if(selectedType==='text' && selectedIndex>=0){ objects.splice(selectedIndex,1); selectedIndex=-1; selectedType=null; draw(); } if(selectedType==='image' && selectedIndex>=0){ images.splice(selectedIndex,1); selectedIndex=-1; selectedType=null; draw(); } };
+document.getElementById('clearBtn').onclick=()=>{ objects=[]; images=[]; selectedIndex=-1; selectedType=null; updateTextPanel(null); draw(); };
 
-['textValue','posX','posY','fontSelect','fontSize','rotateText','colorText','strokeColor','strokeWidth'].forEach(id=>{
-  document.getElementById(id).addEventListener('input',()=>{
-    if(selectedType==='text' && selectedIndex>=0){
-      const t=objects[selectedIndex];
-      t.text=document.getElementById('textValue').value;
-      t.x=parseFloat(document.getElementById('posX').value);
-      t.y=parseFloat(document.getElementById('posY').value);
-      t.fontFamily=document.getElementById('fontSelect').value;
-      t.fontSize=parseFloat(document.getElementById('fontSize').value);
-      t.rotation=parseFloat(document.getElementById('rotateText').value);
-      t.color=document.getElementById('colorText').value;
-      t.strokeColor=document.getElementById('strokeColor').value;
-      t.strokeWidth=parseFloat(document.getElementById('strokeWidth').value);
-      draw();
-    }
-  });
-});
-document.getElementById('boldBtn').onclick=()=>{
-  if(selectedType==='text' && selectedIndex>=0){
-    const t=objects[selectedIndex];
-    t.bold=!t.bold;
-    document.getElementById('boldBtn').classList.toggle('active',t.bold);
-    draw();
-  }
-};
-document.getElementById('italicBtn').onclick=()=>{
-  if(selectedType==='text' && selectedIndex>=0){
-    const t=objects[selectedIndex];
-    t.italic=!t.italic;
-    document.getElementById('italicBtn').classList.toggle('active',t.italic);
-    draw();
-  }
-};
+['textValue','posX','posY','fontSelect','fontSize','rotateText','colorText','strokeColor','strokeWidth'].forEach(id=>{ document.getElementById(id).addEventListener('input',()=>{ if(selectedType==='text' && selectedIndex>=0){ const t=objects[selectedIndex]; t.text=document.getElementById('textValue').value; t.x=parseFloat(document.getElementById('posX').value); t.y=parseFloat(document.getElementById('posY').value); t.fontFamily=document.getElementById('fontSelect').value; t.fontSize=parseFloat(document.getElementById('fontSize').value); t.rotation=parseFloat(document.getElementById('rotateText').value); t.color=document.getElementById('colorText').value; t.strokeColor=document.getElementById('strokeColor').value; t.strokeWidth=parseFloat(document.getElementById('strokeWidth').value); draw(); } }); });
+document.getElementById('boldBtn').onclick=()=>{ if(selectedType==='text' && selectedIndex>=0){ const t=objects[selectedIndex]; t.bold=!t.bold; document.getElementById('boldBtn').classList.toggle('active',t.bold); draw(); } };
+document.getElementById('italicBtn').onclick=()=>{ if(selectedType==='text' && selectedIndex>=0){ const t=objects[selectedIndex]; t.italic=!t.italic; document.getElementById('italicBtn').classList.toggle('active',t.italic); draw(); } };
 
-document.getElementById('bgFile').addEventListener('change',e=>{
-  const file=e.target.files[0]; if(!file) return;
-  const img=new Image();
-  img.onload=()=>{ bgImage=img; draw(); };
-  img.src=URL.createObjectURL(file);
-});
-document.getElementById('addImgFile').addEventListener('change',e=>{
-  const file=e.target.files[0]; if(!file) return;
-  const img=new Image();
-  img.onload=()=>{
-    const aspectRatio = img.width / img.height;
-    const newImg=ImageObject(img,50,50,img.width*0.7,img.height*0.7, aspectRatio);
-    images.push(newImg);
-    selectObject(images.length-1,'image');
-    draw();
-  };
-  img.src=URL.createObjectURL(file);
-});
+document.getElementById('bgFile').addEventListener('change',e=>{ const file=e.target.files[0]; if(!file) return; const img=new Image(); img.onload=()=>{ bgImage=img; draw(); }; img.src=URL.createObjectURL(file); });
+document.getElementById('addImgFile').addEventListener('change',e=>{ const file=e.target.files[0]; if(!file) return; const img=new Image(); img.onload=()=>{ const aspectRatio = img.width / img.height; const newImg=ImageObject(img,50,50,img.width*0.7,img.height*0.7, aspectRatio); images.push(newImg); selectObject(images.length-1,'image'); draw(); }; img.src=URL.createObjectURL(file); });
 
 canvas.addEventListener('mousedown', e=>{
   const mouseX = e.offsetX, mouseY = e.offsetY;
   let clickedOnObject = false;
-  
-  // Проверяем картинки с конца для корректного выбора по слою
-  for(let i = images.length - 1; i >= 0; i--){
-    const img = images[i];
-    if(mouseX >= img.x && mouseX <= img.x + img.width &&
-       mouseY >= img.y && mouseY <= img.y + img.height){
-      selectObject(i, 'image');
-      clickedOnObject = true;
-      break;
-    }
-  }
-  
-  if(!clickedOnObject){
-    // Проверяем текст с конца для выбора верхнего слоя
-    for(let i = objects.length - 1; i >= 0; i--){
-      const t = objects[i];
-      ctx.save();
-      ctx.translate(t.x, t.y);
-      ctx.rotate(t.rotation * Math.PI/180);
-      const w = ctx.measureText(t.text).width;
-      const h = t.fontSize * 1.2;
-      ctx.restore();
-      
-      // Проверяем попадание в прямоугольник (упрощенно, без учёта вращения)
-      if(mouseX >= t.x && mouseX <= t.x + w &&
-         mouseY >= t.y && mouseY <= t.y + h){
-        selectObject(i, 'text');
-        clickedOnObject = true;
-        break;
-      }
-    }
-  }
-  
-  if(!clickedOnObject) {
-    selectedIndex = -1;
-    selectedType = null;
-    updateTextPanel(null);
-    draw();
-  }
-
+  for(let i = images.length - 1; i >= 0; i--){ const img = images[i]; if(mouseX >= img.x && mouseX <= img.x + img.width && mouseY >= img.y && mouseY <= img.y + img.height){ selectObject(i, 'image'); clickedOnObject = true; break; } }
+  if(!clickedOnObject){ for(let i = objects.length - 1; i >= 0; i--){ const t = objects[i]; ctx.save(); ctx.translate(t.x, t.y); ctx.rotate(t.rotation * Math.PI/180); const w = ctx.measureText(t.text).width; const h = t.fontSize * 1.2; ctx.restore(); if(mouseX >= t.x && mouseX <= t.x + w && mouseY >= t.y && mouseY <= t.y + h){ selectObject(i, 'text'); clickedOnObject = true; break; } } }
+  if(!clickedOnObject) { selectedIndex = -1; selectedType = null; updateTextPanel(null); draw(); }
   isDragging=false; isResizing=false;
-  if(clickedOnObject && selectedIndex>=0 && selectedType){
-    const obj = selectedType==='text'? objects[selectedIndex] : images[selectedIndex];
-    const w = selectedType==='text'? ctx.measureText(obj.text).width : obj.width;
-    const h = selectedType==='text'? obj.fontSize*1.2 : obj.height;
-    if(mouseX >= obj.x + w - resizeHandleSize && mouseX <= obj.x + w + resizeHandleSize &&
-       mouseY >= obj.y + h - resizeHandleSize && mouseY <= obj.y + h + resizeHandleSize){ 
-      isResizing=true; 
-    }
-    else if(mouseX>=obj.x && mouseX<=obj.x+w && mouseY>=obj.y && mouseY<=obj.y+h){ 
-      isDragging=true; dragOffset.x=mouseX-obj.x; dragOffset.y=mouseY-obj.y; 
-    }
-  }
+  if(clickedOnObject && selectedIndex>=0 && selectedType){ const obj = selectedType==='text'? objects[selectedIndex] : images[selectedIndex]; const w = selectedType==='text'? ctx.measureText(obj.text).width : obj.width; const h = selectedType==='text'? obj.fontSize*1.2 : obj.height; if(mouseX >= obj.x + w - resizeHandleSize && mouseX <= obj.x + w + resizeHandleSize && mouseY >= obj.y + h - resizeHandleSize && mouseY <= obj.y + h + resizeHandleSize){ isResizing=true; } else if(mouseX>=obj.x && mouseX<=obj.x+w && mouseY>=obj.y && mouseY<=obj.y+h){ isDragging=true; dragOffset.x=mouseX-obj.x; dragOffset.y=mouseY-obj.y; } }
 });
-canvas.addEventListener('mousemove', e=>{
-  const mouseX=e.offsetX, mouseY=e.offsetY;
-  if(isDragging && selectedType && selectedIndex>=0){
-    const obj = selectedType==='text'? objects[selectedIndex] : images[selectedIndex];
-    obj.x = mouseX - dragOffset.x; obj.y = mouseY - dragOffset.y; draw();
-  }
-  if(isResizing && selectedType && selectedIndex>=0){
-    const obj = selectedType==='text'? objects[selectedIndex] : images[selectedIndex];
-    if(selectedType==='text') obj.fontSize = Math.max(10, mouseY - obj.y);
-    else {
-      obj.width = Math.max(20, mouseX - obj.x);
-      obj.height = obj.width / obj.aspectRatio; // сохраняем пропорции
-    }
-    draw();
-  }
-});
+canvas.addEventListener('mousemove', e=>{ const mouseX=e.offsetX, mouseY=e.offsetY; if(isDragging && selectedType && selectedIndex>=0){ const obj = selectedType==='text'? objects[selectedIndex] : images[selectedIndex]; obj.x = mouseX - dragOffset.x; obj.y = mouseY - dragOffset.y; draw(); } if(isResizing && selectedType && selectedIndex>=0){ const obj = selectedType==='text'? objects[selectedIndex] : images[selectedIndex]; if(selectedType==='text') obj.fontSize = Math.max(10, mouseY - obj.y); else { obj.width = Math.max(20, mouseX - obj.x); obj.height = obj.width / obj.aspectRatio; } draw(); } });
 canvas.addEventListener('mouseup',()=>{ isDragging=false; isResizing=false; });
 
 document.getElementById('toggleBgStroke').addEventListener('change',e=>{ bgStrokeEnabled=e.target.checked; draw(); });
 document.getElementById('bgStrokeColor').addEventListener('input', e=>{ bgStrokeColor=e.target.value; draw(); });
 document.getElementById('toggleBgRound').addEventListener('change', e=>{ bgRoundEnabled=e.target.checked; draw(); });
 
-function saveCanvas(type){
-  // Сохраняем с разрешением 1920x768
-  const originalWidth = canvas.width;
-  const originalHeight = canvas.height;
-  
-  canvas.width = 1920;
-  canvas.height = 768;
-  draw();
-  
-  const mimeType = (type === 'jpeg') ? 'image/jpeg' : 'image/png';
-  const dataUrl = canvas.toDataURL(mimeType, type === 'jpeg' ? 0.95 : undefined);
-  
-  const link = document.createElement('a');
-  link.download = 'canvas.' + type;
-  link.href = dataUrl;
-  link.click();
-  
-  canvas.width = originalWidth;
-  canvas.height = originalHeight;
-  draw();
-}
-
+function saveCanvas(type){ const originalWidth = canvas.width; const originalHeight = canvas.height; canvas.width = 1920; canvas.height = 768; draw(); const mimeType = (type === 'jpeg') ? 'image/jpeg' : 'image/png'; const dataUrl = canvas.toDataURL(mimeType, type === 'jpeg' ? 0.95 : undefined); const link = document.createElement('a'); link.download = 'canvas.' + type; link.href = dataUrl; link.click(); canvas.width = originalWidth; canvas.height = originalHeight; draw(); }
 document.getElementById('savePngBtn').onclick = () => saveCanvas('png');
 document.getElementById('saveJpgBtn').onclick = () => saveCanvas('jpeg');
 
@@ -467,6 +329,19 @@ const centerY=(canvas.height-textHeight)/2;
 objects.push(TextObject({x:centerX,y:centerY,text:initialText,fontFamily:'Roboto',fontSize:56,color:'#ffffff'}));
 selectedType='text'; selectedIndex=0;
 draw();
+</script>
+
+<!-- VK Bridge -->
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+(async () => {
+  try {
+    await vkBridge.send('VKWebAppInit');
+    console.log('VK Bridge успешно инициализирован');
+  } catch (e) {
+    console.warn('VK Bridge инициализация не удалась или недоступна', e);
+  }
+})();
 </script>
 
 </body>
