@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Редактор картинок и текста</title>
+<title>Редактор картинок и текста с VK Bridge</title>
 <style>
   body { font-family: Arial,sans-serif; margin:8px; display:flex; flex-direction:column; align-items:center; gap:8px; }
   #canvasWrap { background:#b0b0b0; border-radius:6px; padding:8px; box-shadow:0 0 4px #999; }
@@ -19,7 +19,7 @@
 </head>
 <body>
 
-<h2>Редактор картинок и текста</h2>
+<h2>Редактор картинок и текста с VK Bridge</h2>
 
 <div class="flex-row" style="gap:16px;">
   <button id="loadBgBtn">Загрузить фон</button>
@@ -53,6 +53,18 @@
 </div>
 
 <p style="font-size:10px; color:#666;">Интерфейс: Придумал, сделал. MUZER play.</p>
+
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+(async () => {
+  try {
+    await vkBridge.send('VKWebAppInit');
+    console.log('VK Bridge initialized successfully');
+  } catch (e) {
+    console.warn('VK Bridge initialization failed or unavailable', e);
+  }
+})();
+</script>
 
 <script>
 const canvas=document.getElementById('canvas');
@@ -142,8 +154,21 @@ window.addEventListener('mouseup',()=>{dragging=false;});
 document.getElementById('saveJPG').onclick=()=>{
   const tmpCanvas=document.createElement('canvas'); tmpCanvas.width=1920; tmpCanvas.height=768; const tmpCtx=tmpCanvas.getContext('2d');
   if(bgImage) tmpCtx.drawImage(bgImage,0,0,1920,768); else tmpCtx.fillStyle='#222',tmpCtx.fillRect(0,0,1920,768);
-  images.forEach(imgObj=>{ tmpCtx.save(); tmpCtx.translate((imgObj.x/canvas.width)*1920+(imgObj.img.width*imgObj.scale/2)*(1920/canvas.width),(imgObj.y/canvas.height)*768+(imgObj.img.height*imgObj.scale/2)*(768/canvas.height)); if(imgObj.flip) tmpCtx.scale(-1,1); tmpCtx.drawImage(imgObj.img,-(imgObj.img.width*imgObj.scale/2)*(1920/canvas.width),-(imgObj.img.height*imgObj.scale/2)*(768/canvas.height),(imgObj.img.width*imgObj.scale)*(1920/canvas.width),(imgObj.img.height*imgObj.scale)*(768/canvas.height)); tmpCtx.restore();});
-  objects.forEach(o=>{ tmpCtx.save(); tmpCtx.translate((o.x/canvas.width)*1920,(o.y/canvas.height)*768); tmpCtx.font=(o.fontSize*(1920/canvas.width))+'px Arial'; tmpCtx.fillStyle=o.color; tmpCtx.fillText(o.text,0,0); tmpCtx.restore(); });
+  images.forEach(imgObj=>{
+    tmpCtx.save();
+    tmpCtx.translate((imgObj.x/canvas.width)*1920+(imgObj.img.width*imgObj.scale/2)*(1920/canvas.width),(imgObj.y/canvas.height)*768+(imgObj.img.height*imgObj.scale/2)*(768/canvas.height));
+    if(imgObj.flip) tmpCtx.scale(-1,1);
+    tmpCtx.drawImage(imgObj.img,-(imgObj.img.width*imgObj.scale/2)*(1920/canvas.width),-(imgObj.img.height*imgObj.scale/2)*(768/canvas.height),(imgObj.img.width*imgObj.scale)*(1920/canvas.width),(imgObj.img.height*imgObj.scale)*(768/canvas.height));
+    tmpCtx.restore();
+  });
+  objects.forEach(o=>{
+    tmpCtx.save();
+    tmpCtx.translate((o.x/canvas.width)*1920,(o.y/canvas.height)*768);
+    tmpCtx.font=(o.fontSize*(1920/canvas.width))+'px Arial';
+    tmpCtx.fillStyle=o.color;
+    tmpCtx.fillText(o.text,0,0);
+    tmpCtx.restore();
+  });
   const link=document.createElement('a'); link.download='image.jpg'; link.href=tmpCanvas.toDataURL('image/jpeg'); link.click();
 };
 
