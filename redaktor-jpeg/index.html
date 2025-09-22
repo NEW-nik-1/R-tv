@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Редактор картинок и текста с VK Bridge</title>
+<title>Редактор картинок с VK Bridge</title>
 <style>
   body { font-family: Arial,sans-serif; margin:8px; display:flex; flex-direction:column; align-items:center; gap:8px; }
   #canvasWrap { background:#b0b0b0; border-radius:6px; padding:8px; box-shadow:0 0 4px #999; }
@@ -19,7 +19,7 @@
 </head>
 <body>
 
-<h2>Редактор картинок и текста с VK Bridge</h2>
+<h2>Редактор картинок с VK Bridge</h2>
 
 <div class="flex-row" style="gap:16px;">
   <button id="loadBgBtn">Загрузить фон</button>
@@ -28,11 +28,6 @@
   <input type="file" id="addImgFile1" accept="image/*" style="display:none;" />
   <button id="addImg2Btn">Добавить картинку 2</button>
   <input type="file" id="addImgFile2" accept="image/*" style="display:none;" />
-</div>
-
-<div class="flex-row" style="gap:8px;">
-  <button id="addTextBtn">Добавить текст</button>
-  <input type="range" id="fontSizeRange" min="10" max="200" value="40" />
 </div>
 
 <div class="flex-row" style="gap:8px;">
@@ -67,109 +62,118 @@
 </script>
 
 <script>
-const canvas=document.getElementById('canvas');
-const ctx=canvas.getContext('2d');
-let bgImage=null;
-let images=[];
-let objects=[];
-let selectedType=null, selectedIndex=-1, dragging=false;
-let dragOffsetX=0, dragOffsetY=0;
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let bgImage = null;
+let images = [];
+let selectedIndex = -1, dragging = false;
+let dragOffsetX = 0, dragOffsetY = 0;
 
-class TextObject{
-  constructor(opts={}){ this.type='text'; this.x=100; this.y=100; this.text=opts.text||'текст'; this.fontSize=40; this.color='#fff'; this.scale=1; }
-}
-class ImageObject{
-  constructor(img,x=0,y=0,scale=1){ this.type='image'; this.img=img; this.x=x; this.y=y; this.scale=scale; this.flip=false; }
+class ImageObject {
+  constructor(img, x=0, y=0, scale=1){
+    this.img = img;
+    this.x = x;
+    this.y = y;
+    this.scale = scale;
+    this.flip = false;
+  }
 }
 
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(bgImage) ctx.drawImage(bgImage,0,0,canvas.width,canvas.height);
-  else ctx.fillStyle='#222',ctx.fillRect(0,0,canvas.width,canvas.height);
+  else { ctx.fillStyle='#222'; ctx.fillRect(0,0,canvas.width,canvas.height); }
 
   images.forEach(imgObj=>{
     ctx.save();
-    ctx.translate(imgObj.x+imgObj.img.width*imgObj.scale/2,imgObj.y+imgObj.img.height*imgObj.scale/2);
+    ctx.translate(imgObj.x + imgObj.img.width*imgObj.scale/2, imgObj.y + imgObj.img.height*imgObj.scale/2);
     if(imgObj.flip) ctx.scale(-1,1);
     ctx.drawImage(imgObj.img,-imgObj.img.width*imgObj.scale/2,-imgObj.img.height*imgObj.scale/2,imgObj.img.width*imgObj.scale,imgObj.img.height*imgObj.scale);
-    ctx.restore();
-  });
-
-  objects.forEach(o=>{
-    ctx.save();
-    ctx.translate(o.x,o.y);
-    ctx.font=o.fontSize+'px Arial';
-    ctx.fillStyle=o.color;
-    ctx.fillText(o.text,0,0);
     ctx.restore();
   });
 }
 
 function addImage(input){
-  const f=input.files[0]; if(!f) return;
-  const img=new Image();
-  img.onload=()=>{
-    let scale=Math.min(canvas.width/img.width,canvas.height/img.height,1);
+  const f = input.files[0]; if(!f) return;
+  const img = new Image();
+  img.onload = () => {
+    let scale = Math.min(canvas.width/img.width, canvas.height/img.height, 1);
     images.push(new ImageObject(img,50,50,scale));
-    selectedType='image'; selectedIndex=images.length-1; draw();
+    selectedIndex = images.length-1;
+    draw();
   };
-  img.src=URL.createObjectURL(f);
+  img.src = URL.createObjectURL(f);
 }
 
-document.getElementById('loadBgBtn').onclick=()=>document.getElementById('bgFile').click();
-document.getElementById('bgFile').addEventListener('change',(e)=>{const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{bgImage=img; draw();}; img.src=URL.createObjectURL(f);});
+document.getElementById('loadBgBtn').onclick = () => document.getElementById('bgFile').click();
+document.getElementById('bgFile').addEventListener('change', (e) => {
+  const f = e.target.files[0]; if(!f) return;
+  const img = new Image();
+  img.onload = () => { bgImage = img; draw(); };
+  img.src = URL.createObjectURL(f);
+});
 
-document.getElementById('addImg1Btn').onclick=()=>document.getElementById('addImgFile1').click();
-document.getElementById('addImg2Btn').onclick=()=>document.getElementById('addImgFile2').click();
-document.getElementById('addImgFile1').addEventListener('change',(e)=>addImage(e.target));
-document.getElementById('addImgFile2').addEventListener('change',(e)=>addImage(e.target));
+document.getElementById('addImg1Btn').onclick = () => document.getElementById('addImgFile1').click();
+document.getElementById('addImg2Btn').onclick = () => document.getElementById('addImgFile2').click();
+document.getElementById('addImgFile1').addEventListener('change', (e)=>addImage(e.target));
+document.getElementById('addImgFile2').addEventListener('change', (e)=>addImage(e.target));
 
-document.getElementById('addTextBtn').onclick=()=>{objects.push(new TextObject({text:'Новый текст'})); selectedType='text'; selectedIndex=objects.length-1; draw();};
-document.getElementById('fontSizeRange').addEventListener('input',()=>{ if(selectedType==='text'&&selectedIndex>=0) { objects[selectedIndex].fontSize=parseInt(document.getElementById('fontSizeRange').value); draw(); }});
-
-document.getElementById('flipHorizBtn').onclick=()=>{ if(selectedType==='image'&&selectedIndex>=0){ images[selectedIndex].flip=!images[selectedIndex].flip; draw(); }};
+document.getElementById('flipHorizBtn').onclick = () => {
+  if(selectedIndex >= 0){ images[selectedIndex].flip = !images[selectedIndex].flip; draw(); }
+};
 
 canvas.addEventListener('mousedown',(e)=>{
-  const rect=canvas.getBoundingClientRect();
-  const mouseX=e.clientX-rect.left;
-  const mouseY=e.clientY-rect.top;
-  dragging=false;
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  dragging = false;
 
-  for(let i=objects.length-1;i>=0;i--){
-    const o=objects[i],w=ctx.measureText(o.text).width,h=o.fontSize;
-    if(mouseX>=o.x&&mouseX<=o.x+w&&mouseY>=o.y&&mouseY<=o.y+h){ selectedType='text'; selectedIndex=i; dragOffsetX=mouseX-o.x; dragOffsetY=mouseY-o.y; dragging=true; draw(); return; }
-  }
-  for(let i=images.length-1;i>=0;i--){
-    const img=images[i],w=img.img.width*img.scale,h=img.img.height*img.scale;
-    if(mouseX>=img.x&&mouseX<=img.x+w&&mouseY>=img.y&&mouseY<=img.y+h){ selectedType='image'; selectedIndex=i; dragOffsetX=mouseX-img.x; dragOffsetY=mouseY-img.y; dragging=true; draw(); return; }
+  for(let i = images.length-1; i>=0; i--){
+    const img = images[i], w=img.img.width*img.scale, h=img.img.height*img.scale;
+    if(mouseX >= img.x && mouseX <= img.x + w && mouseY >= img.y && mouseY <= img.y + h){
+      selectedIndex = i;
+      dragOffsetX = mouseX - img.x;
+      dragOffsetY = mouseY - img.y;
+      dragging = true;
+      draw();
+      return;
+    }
   }
 });
 
-canvas.addEventListener('mousemove',(e)=>{ if(!dragging) return; const rect=canvas.getBoundingClientRect(); const mouseX=e.clientX-rect.left; const mouseY=e.clientY-rect.top;
-  if(selectedType==='text'&&selectedIndex>=0){ objects[selectedIndex].x=mouseX-dragOffsetX; objects[selectedIndex].y=mouseY-dragOffsetY; draw();}
-  else if(selectedType==='image'&&selectedIndex>=0){ images[selectedIndex].x=mouseX-dragOffsetX; images[selectedIndex].y=mouseY-dragOffsetY; draw();}
+canvas.addEventListener('mousemove',(e)=>{
+  if(!dragging) return;
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  if(selectedIndex >= 0){
+    images[selectedIndex].x = mouseX - dragOffsetX;
+    images[selectedIndex].y = mouseY - dragOffsetY;
+    draw();
+  }
 });
-window.addEventListener('mouseup',()=>{dragging=false;});
+window.addEventListener('mouseup',()=>{ dragging = false; });
 
-document.getElementById('saveJPG').onclick=()=>{
-  const tmpCanvas=document.createElement('canvas'); tmpCanvas.width=1920; tmpCanvas.height=768; const tmpCtx=tmpCanvas.getContext('2d');
-  if(bgImage) tmpCtx.drawImage(bgImage,0,0,1920,768); else tmpCtx.fillStyle='#222',tmpCtx.fillRect(0,0,1920,768);
+document.getElementById('saveJPG').onclick = () => {
+  const tmpCanvas = document.createElement('canvas'); tmpCanvas.width=1920; tmpCanvas.height=768;
+  const tmpCtx = tmpCanvas.getContext('2d');
+  if(bgImage) tmpCtx.drawImage(bgImage,0,0,1920,768); else { tmpCtx.fillStyle='#222'; tmpCtx.fillRect(0,0,1920,768); }
+
   images.forEach(imgObj=>{
     tmpCtx.save();
-    tmpCtx.translate((imgObj.x/canvas.width)*1920+(imgObj.img.width*imgObj.scale/2)*(1920/canvas.width),(imgObj.y/canvas.height)*768+(imgObj.img.height*imgObj.scale/2)*(768/canvas.height));
+    tmpCtx.translate((imgObj.x/canvas.width)*1920 + (imgObj.img.width*imgObj.scale/2)*(1920/canvas.width),
+                     (imgObj.y/canvas.height)*768 + (imgObj.img.height*imgObj.scale/2)*(768/canvas.height));
     if(imgObj.flip) tmpCtx.scale(-1,1);
-    tmpCtx.drawImage(imgObj.img,-(imgObj.img.width*imgObj.scale/2)*(1920/canvas.width),-(imgObj.img.height*imgObj.scale/2)*(768/canvas.height),(imgObj.img.width*imgObj.scale)*(1920/canvas.width),(imgObj.img.height*imgObj.scale)*(768/canvas.height));
+    tmpCtx.drawImage(imgObj.img,
+      -(imgObj.img.width*imgObj.scale/2)*(1920/canvas.width),
+      -(imgObj.img.height*imgObj.scale/2)*(768/canvas.height),
+      (imgObj.img.width*imgObj.scale)*(1920/canvas.width),
+      (imgObj.img.height*imgObj.scale)*(768/canvas.height)
+    );
     tmpCtx.restore();
   });
-  objects.forEach(o=>{
-    tmpCtx.save();
-    tmpCtx.translate((o.x/canvas.width)*1920,(o.y/canvas.height)*768);
-    tmpCtx.font=(o.fontSize*(1920/canvas.width))+'px Arial';
-    tmpCtx.fillStyle=o.color;
-    tmpCtx.fillText(o.text,0,0);
-    tmpCtx.restore();
-  });
-  const link=document.createElement('a'); link.download='image.jpg'; link.href=tmpCanvas.toDataURL('image/jpeg'); link.click();
+
+  const link = document.createElement('a'); link.download='image.jpg'; link.href=tmpCanvas.toDataURL('image/jpeg'); link.click();
 };
 
 draw();
