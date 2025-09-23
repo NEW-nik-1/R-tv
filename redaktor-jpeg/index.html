@@ -88,12 +88,24 @@ button, .icon-btn, select, input[type="number"] { font-size: 11px; padding: 3px 
 </div>
 
 <div>
-  <a class="author-label" href="https://example.com" target="_blank">
+  <a class="author-label" href="https://vk.com/muzer_play" target="_blank">
     <i class="fa-solid fa-user"></i> Автор: muzer_play + ( ChatGPT )
   </a>
 </div>
 
 </div>
+
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+(async () => {
+  try {
+    await vkBridge.send('VKWebAppInit');
+    console.log('VK Bridge инициализирован');
+  } catch (e) {
+    console.warn('VK Bridge initialization failed or unavailable', e);
+  }
+})();
+</script>
 
 <script>
 const canvas = document.getElementById('canvas');
@@ -110,7 +122,7 @@ const decreaseBtn = document.getElementById('decrease');
 const increaseBtn = document.getElementById('increase');
 const flipCheckbox = document.getElementById('flipHoriz');
 
-let lastOffsetX = 40; // для сдвига новой картинки
+let lastOffsetX = 40; 
 let lastOffsetY = 40;
 
 class ImageObject {
