@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title> Редактор обложек для вк </title>
+<title>Редактор обложек для вк</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 body {
     margin: 0;
     padding: 8px;
     font-family: Arial, sans-serif;
-    background: #111;
+    background: url("https://raw.githubusercontent.com/NEW-nik-1/R-tv/refs/heads/main/background.jpg") no-repeat center center fixed;
+    background-size: cover;
     color: #e0e0e0;
     display: flex;
     justify-content: center;
@@ -206,7 +207,6 @@ canvas.addEventListener('mousedown',(e)=>{
   }
 });
 
-// Удаление картинки правым кликом
 canvas.addEventListener('contextmenu',(e)=>{
   e.preventDefault();
   const rect = canvas.getBoundingClientRect();
@@ -295,4 +295,3 @@ draw();
 </script>
 </body>
 </html>
-
