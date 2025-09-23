@@ -21,13 +21,39 @@ body {
     text-align: center;
 }
 h2 { font-size: 16px; margin-bottom: 6px; }
-#canvasWrap { padding: 4px; box-shadow:0 0 4px #999; margin-bottom: 6px; }
+#canvasWrap { padding: 4px; box-shadow:0 0 4px #999; margin-bottom: 12px; }
 canvas { background: #222; cursor: grab; width: 640px; height: 252px; border-radius: 4px; }
-.flex-row { display: flex; gap: 4px; flex-wrap: wrap; justify-content:center; align-items:center; margin-bottom:4px; }
-button, .icon-btn, select, input[type="number"] { font-size: 11px; padding: 3px 6px; border-radius: 4px; cursor:pointer; display:flex; align-items:center; gap:4px; }
-#scaleControl { width: 640px; display:none; margin-bottom: 4px; justify-content: center; align-items: center; }
-.slider-wrapper { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-.links-buttons { display: flex; gap: 4px; flex-wrap: wrap; justify-content:center; margin-bottom: 4px; }
+.flex-row, .links-buttons {
+    display: flex;
+    gap: 20px; /* увеличенный интервал между кнопками */
+    flex-wrap: wrap;
+    justify-content:center;
+    align-items:center;
+    margin-bottom:12px;
+}
+
+button, .icon-btn {
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+/* Подсветка кнопок при наведении */
+button:hover,
+.icon-btn:hover {
+    background-color: #BDB76B;
+    color: #fff;
+    transform: scale(1.05);
+    box-shadow: 0 0 6px rgba(0,0,0,0.4);
+}
+
+#scaleControl { width: 640px; display:none; margin-bottom: 12px; justify-content: center; align-items: center; }
+.slider-wrapper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .author-label { font-size: 11px; color: rgba(180,180,180,0.4); text-decoration:none; display:inline-block; padding:3px 6px; background:#222; border-radius:4px; margin-top:60px; }
 </style>
 </head>
@@ -42,6 +68,7 @@ button, .icon-btn, select, input[type="number"] { font-size: 11px; padding: 3px 
   
   <button id="addImg1Btn"><i class="fa-solid fa-photo-film"></i> Картинка 1</button>
   <input type="file" id="addImgFile1" accept="image/*" style="display:none;">
+  
   <button id="addImg2Btn"><i class="fa-solid fa-photo-film"></i> Картинка 2</button>
   <input type="file" id="addImgFile2" accept="image/*" style="display:none;">
 </div>
@@ -90,7 +117,7 @@ button, .icon-btn, select, input[type="number"] { font-size: 11px; padding: 3px 
 
 <div>
   <a class="author-label" href="https://vk.com/muzer_play" target="_blank">
-    <i class="fa-solid fa-user"></i> Автор: MUZER play  +  ( ChatGPT )
+    <i class="fa-solid fa-user"></i> Автор: MUZER play + ( ChatGPT )
   </a>
 </div>
 
@@ -109,6 +136,7 @@ button, .icon-btn, select, input[type="number"] { font-size: 11px; padding: 3px 
 </script>
 
 <script>
+// JS код для canvas и изображений
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let bgImage = null;
@@ -295,7 +323,3 @@ draw();
 </script>
 </body>
 </html>
-
-
-
-
