@@ -25,13 +25,12 @@ h2 { font-size: 16px; margin-bottom: 6px; }
 canvas { background: #222; cursor: grab; width: 640px; height: 252px; border-radius: 4px; }
 .flex-row, .links-buttons {
     display: flex;
-    gap: 20px; /* увеличенный интервал между кнопками */
+    gap: 20px;
     flex-wrap: wrap;
     justify-content:center;
     align-items:center;
     margin-bottom:12px;
 }
-
 button, .icon-btn {
     font-size: 11px;
     padding: 6px 12px;
@@ -42,8 +41,6 @@ button, .icon-btn {
     gap: 4px;
     transition: all 0.2s ease;
 }
-
-/* Подсветка кнопок при наведении */
 button:hover,
 .icon-btn:hover {
     background-color: #BDB76B;
@@ -51,7 +48,6 @@ button:hover,
     transform: scale(1.05);
     box-shadow: 0 0 6px rgba(0,0,0,0.4);
 }
-
 #scaleControl { width: 640px; display:none; margin-bottom: 12px; justify-content: center; align-items: center; }
 .slider-wrapper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .author-label { font-size: 11px; color: rgba(180,180,180,0.4); text-decoration:none; display:inline-block; padding:3px 6px; background:#222; border-radius:4px; margin-top:60px; }
@@ -102,10 +98,10 @@ button:hover,
 
 <div class="links-buttons">
   <button onclick="window.open('https://www.photoroom.com/ru/instrumenty/ubrat-fon-onlayn', '_blank')">
-    <i class="fa-solid fa-scissors"></i> Убрать фон на фото или картинках (Photoroom)
+    <i class="fa-solid fa-scissors"></i> Убрать фон (Photoroom)
   </button>
   <button onclick="window.open('https://carve.photos/', '_blank')">
-    <i class="fa-solid fa-cut"></i> Убрать фон на фото или картинках (Carve.photos)
+    <i class="fa-solid fa-cut"></i> Убрать фон (Carve.photos)
   </button>
   <button onclick="window.open('https://ru.textstudio.com/', '_blank')">
     <i class="fa-solid fa-font"></i> Красивый текст (TextStudio)
@@ -312,6 +308,15 @@ document.getElementById('saveImageBtn').onclick=()=>{
     );
     tmpCtx.restore();
   });
+
+  // 🔹 Добавляем подпись (водяной знак)
+  tmpCtx.save();
+  tmpCtx.font = "italic 16px cursive";
+  tmpCtx.fillStyle = "rgba(255,255,255,0.2)";
+  tmpCtx.textAlign = "right";
+  tmpCtx.textBaseline = "bottom";
+  tmpCtx.fillText("Редактор обложек для вк", width - 12, height - 8);
+  tmpCtx.restore();
 
   const link=document.createElement('a');
   link.download='image.'+(format==='jpeg'?'jpg':'png');
