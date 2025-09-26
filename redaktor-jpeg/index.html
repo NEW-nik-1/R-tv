@@ -75,6 +75,7 @@ button:hover,
   text-align: left;
 }
 .modal-content h2 { margin-top: 0; color: #ffcc66; }
+.modal-content h3 { margin-top: 20px; color: #ffcc66; }
 .close {
   color: #aaa;
   float: right;
@@ -100,7 +101,6 @@ button:hover,
   <button id="addImg2Btn"><i class="fa-solid fa-photo-film"></i> Картинка 2</button>
   <input type="file" id="addImgFile2" accept="image/*" style="display:none;">
   
-  <!-- 🔹 Кнопка открытия инструкции -->
   <button id="helpBtn"><i class="fa-solid fa-circle-question"></i> Инструкция</button>
 </div>
 
@@ -153,42 +153,27 @@ button:hover,
 </div>
 </div>
 
-<!-- 🔹 Модальное окно с инструкцией -->
+<!-- 🔹 Модальное окно с текстовой и видео инструкцией -->
 <div id="helpModal" class="modal">
   <div class="modal-content">
     <span class="close">&times;</span>
     <h2>📘 Инструкция по использованию редактора обложек</h2>
     <ol>
-      <li><b>Запуск редактора</b><br>
-      После открытия редактора в браузере (Google Chrome или другом) появится панель инструментов для создания обложки.</li><br>
-
-      <li><b>Загрузка фона</b><br>
-      Нажми кнопку «Загрузить фон» → выбери картинку → фон займет весь холст.</li><br>
-
-      <li><b>Добавление картинок</b><br>
-      Нажми «Картинка 1» или «Картинка 2» → выбери файл (изображение или надпись) → элемент появится поверх фона.<br>
-      Новые картинки добавляются немного ниже и правее предыдущей.</li><br>
-
-      <li><b>Работа с картинками</b><br>
-        🔄 Перемещение — перетащи мышкой.<br>
-        🔍 Масштабирование — используй ползунок (50–500 px) или кнопки «+» и «−».<br>
-        ↔ Переворот — галочка «Перевернуть горизонтально».<br>
-        ❌ Удаление — клик правой кнопкой мыши.</li><br>
-
-      <li><b>Сохранение обложки</b><br>
-      Выбери формат (JPG или PNG), задай размеры (например, 1920×768), нажми «Скачать».<br>
-      Внизу автоматически добавляется полупрозрачная подпись «Редактор обложек для вк».</li><br>
-
-      <li><b>Дополнительные кнопки</b><br>
-      Убрать фон (Photoroom / Carve.photos) → удаление фона.<br>
-      Красивый текст (TextStudio / TextDrom) → генерация текста, который можно загрузить в редактор.</li><br>
-
-      <li><b>Советы</b><br>
-      Сначала загружай фон, потом изображения или надпись.<br>
-      Если объект большой — уменьши его ползунком.<br>
-      Размещай элементы так, чтобы они не закрывали важные части.<br>
-      Используй удаление фона для аккуратной композиции.</li>
+      <li><b>Запуск редактора</b><br>После открытия редактора в браузере появится панель инструментов для создания обложки.</li><br>
+      <li><b>Загрузка фона</b><br>Нажми кнопку «Загрузить фон» → выбери картинку → фон займет весь холст.</li><br>
+      <li><b>Добавление картинок</b><br>Нажми «Картинка 1» или «Картинка 2» → выбери файл → элемент появится поверх фона.</li><br>
+      <li><b>Работа с картинками</b><br>🔄 Перемещение — перетащи мышкой.<br>🔍 Масштабирование — ползунок или кнопки «+» и «−».<br>↔ Переворот — галочка «Перевернуть горизонтально».<br>❌ Удаление — правый клик.</li><br>
+      <li><b>Сохранение обложки</b><br>Выбери формат JPG/PNG, размеры, нажми «Скачать».</li><br>
+      <li><b>Дополнительные кнопки</b><br>Удаление фона и красивые тексты через ссылки.</li><br>
+      <li><b>Советы</b><br>Сначала фон, потом картинки. Масштабируй и размещай аккуратно.</li>
     </ol>
+
+    <h3>🎬 Видео инструкция</h3>
+    <video width="100%" controls>
+      <source src="video-instruction.mp4" type="video/mp4">
+      Ваш браузер не поддерживает видео тег.
+    </video>
+
   </div>
 </div>
 
@@ -219,123 +204,96 @@ const scaleValue = document.getElementById('scaleValue');
 const decreaseBtn = document.getElementById('decrease');
 const increaseBtn = document.getElementById('increase');
 const flipCheckbox = document.getElementById('flipHoriz');
-
-let lastOffsetX = 40; 
-let lastOffsetY = 40;
+let lastOffsetX = 40, lastOffsetY = 40;
 
 class ImageObject {
-  constructor(img, x=0, y=0){
-    this.img = img;
-    this.x = x;
-    this.y = y;
-    this.width = 200;
-    this.height = 200 * img.height / img.width;
-    this.flip = false;
+  constructor(img,x=0,y=0){
+    this.img=img; this.x=x; this.y=y;
+    this.width=200; this.height=200*img.height/img.width;
+    this.flip=false;
   }
 }
 
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(bgImage) ctx.drawImage(bgImage,0,0,canvas.width,canvas.height);
-  images.forEach(imgObj=>{
+  images.forEach(img=>{
     ctx.save();
-    ctx.translate(imgObj.x + imgObj.width/2, imgObj.y + imgObj.height/2);
-    ctx.scale(imgObj.flip ? -1 : 1, 1);
-    ctx.drawImage(imgObj.img, -imgObj.width/2, -imgObj.height/2, imgObj.width, imgObj.height);
+    ctx.translate(img.x+img.width/2,img.y+img.height/2);
+    ctx.scale(img.flip?-1:1,1);
+    ctx.drawImage(img.img,-img.width/2,-img.height/2,img.width,img.height);
     ctx.restore();
   });
 }
 
 function addImage(input){
-  const f = input.files[0]; 
-  if(!f) return;
-  const img = new Image();
-  img.onload = () => {
-    lastOffsetX += 20;
-    lastOffsetY += 20;
-    if(lastOffsetX > canvas.width - 200) lastOffsetX = 40;
-    if(lastOffsetY > canvas.height - 200) lastOffsetY = 40;
-    const imgObj = new ImageObject(img, lastOffsetX, lastOffsetY);
-    images.push(imgObj);
-    selectedIndex = images.length-1;
-    updateScaleControl(imgObj);
-    draw();
+  const f=input.files[0]; if(!f) return;
+  const img=new Image();
+  img.onload=()=>{
+    lastOffsetX+=20; lastOffsetY+=20;
+    if(lastOffsetX>canvas.width-200) lastOffsetX=40;
+    if(lastOffsetY>canvas.height-200) lastOffsetY=40;
+    const imgObj=new ImageObject(img,lastOffsetX,lastOffsetY);
+    images.push(imgObj); selectedIndex=images.length-1;
+    updateScaleControl(imgObj); draw();
   };
-  img.src = URL.createObjectURL(f);
-  input.value = '';
+  img.src=URL.createObjectURL(f); input.value='';
 }
 
 function updateScaleControl(imgObj){
-  scaleSlider.value = imgObj.width;
-  scaleValue.textContent = imgObj.width;
-  flipCheckbox.checked = imgObj.flip;
-  scaleControl.style.display = 'flex';
+  scaleSlider.value=imgObj.width;
+  scaleValue.textContent=imgObj.width;
+  flipCheckbox.checked=imgObj.flip;
+  scaleControl.style.display='flex';
 }
 
-document.getElementById('loadBgBtn').onclick = () => document.getElementById('bgFile').click();
-document.getElementById('bgFile').addEventListener('change', (e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  const img = new Image();
-  img.onload = () => { bgImage = img; draw(); };
-  img.src = URL.createObjectURL(f);
+document.getElementById('loadBgBtn').onclick=()=>document.getElementById('bgFile').click();
+document.getElementById('bgFile').addEventListener('change',(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const img=new Image(); img.onload=()=>{ bgImage=img; draw(); };
+  img.src=URL.createObjectURL(f);
 });
+document.getElementById('addImg1Btn').onclick=()=>document.getElementById('addImgFile1').click();
+document.getElementById('addImg2Btn').onclick=()=>document.getElementById('addImgFile2').click();
+document.getElementById('addImgFile1').addEventListener('change',e=>addImage(e.target));
+document.getElementById('addImgFile2').addEventListener('change',e=>addImage(e.target));
 
-document.getElementById('addImg1Btn').onclick = () => document.getElementById('addImgFile1').click();
-document.getElementById('addImg2Btn').onclick = () => document.getElementById('addImgFile2').click();
-document.getElementById('addImgFile1').addEventListener('change', (e)=>addImage(e.target));
-document.getElementById('addImgFile2').addEventListener('change', (e)=>addImage(e.target));
-
-canvas.addEventListener('mousedown',(e)=>{
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-  dragging = false;
+canvas.addEventListener('mousedown',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mouseX=e.clientX-rect.left;
+  const mouseY=e.clientY-rect.top;
+  dragging=false;
   for(let i=images.length-1;i>=0;i--){
     const img=images[i];
-    if(mouseX>=img.x && mouseX<=img.x+img.width && mouseY>=img.y && mouseY<=img.y+img.height){
-      selectedIndex=i;
-      dragOffsetX=mouseX-img.x;
-      dragOffsetY=mouseY-img.y;
-      dragging=true;
-      updateScaleControl(img);
-      draw();
-      return;
+    if(mouseX>=img.x&&mouseX<=img.x+img.width&&mouseY>=img.y&&mouseY<=img.y+img.height){
+      selectedIndex=i; dragOffsetX=mouseX-img.x; dragOffsetY=mouseY-img.y;
+      dragging=true; updateScaleControl(img); draw(); return;
     }
   }
 });
 
-canvas.addEventListener('contextmenu',(e)=>{
+canvas.addEventListener('contextmenu',e=>{
   e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
+  const rect=canvas.getBoundingClientRect();
+  const mouseX=e.clientX-rect.left;
+  const mouseY=e.clientY-rect.top;
   for(let i=images.length-1;i>=0;i--){
     const img=images[i];
-    if(mouseX>=img.x && mouseX<=img.x+img.width && mouseY>=img.y && mouseY<=img.y+img.height){
+    if(mouseX>=img.x&&mouseX<=img.x+img.width&&mouseY>=img.y&&mouseY<=img.y+img.height){
       images.splice(i,1);
-      if(images.length>0){
-        selectedIndex = images.length-1;
-        updateScaleControl(images[selectedIndex]);
-      } else {
-        selectedIndex = -1;
-        scaleControl.style.display = 'none';
-      }
-      draw();
-      return;
+      if(images.length>0){ selectedIndex=images.length-1; updateScaleControl(images[selectedIndex]); }
+      else { selectedIndex=-1; scaleControl.style.display='none'; }
+      draw(); return;
     }
   }
 });
 
-canvas.addEventListener('mousemove',(e)=>{
+canvas.addEventListener('mousemove',e=>{
   if(!dragging) return;
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-  if(selectedIndex>=0){
-    images[selectedIndex].x=mouseX-dragOffsetX;
-    images[selectedIndex].y=mouseY-dragOffsetY;
-    draw();
-  }
+  const rect=canvas.getBoundingClientRect();
+  const mouseX=e.clientX-rect.left;
+  const mouseY=e.clientY-rect.top;
+  if(selectedIndex>=0){ images[selectedIndex].x=mouseX-dragOffsetX; images[selectedIndex].y=mouseY-dragOffsetY; draw(); }
 });
 window.addEventListener('mouseup',()=>{ dragging=false; });
 
@@ -350,9 +308,9 @@ function updateImageSize(width){
   }
 }
 
-scaleSlider.addEventListener('input',()=>{ updateImageSize(parseInt(scaleSlider.value)); });
-decreaseBtn.addEventListener('click',()=>{ updateImageSize(Math.max(50,parseInt(scaleSlider.value)-10)); });
-increaseBtn.addEventListener('click',()=>{ updateImageSize(Math.min(500,parseInt(scaleSlider.value)+10)); });
+scaleSlider.addEventListener('input',()=>updateImageSize(parseInt(scaleSlider.value)));
+decreaseBtn.addEventListener('click',()=>updateImageSize(Math.max(50,parseInt(scaleSlider.value)-10)));
+increaseBtn.addEventListener('click',()=>updateImageSize(Math.min(500,parseInt(scaleSlider.value)+10)));
 flipCheckbox.addEventListener('change',()=>{ if(selectedIndex>=0){ images[selectedIndex].flip=flipCheckbox.checked; draw(); } });
 
 document.getElementById('saveImageBtn').onclick=()=>{
@@ -363,15 +321,13 @@ document.getElementById('saveImageBtn').onclick=()=>{
   if(isNaN(height)||height<100) height=768;
 
   const tmpCanvas=document.createElement('canvas');
-  tmpCanvas.width=width;
-  tmpCanvas.height=height;
+  tmpCanvas.width=width; tmpCanvas.height=height;
   const tmpCtx=tmpCanvas.getContext('2d');
-
   if(bgImage) tmpCtx.drawImage(bgImage,0,0,width,height);
   images.forEach(imgObj=>{
     tmpCtx.save();
-    tmpCtx.translate((imgObj.x/canvas.width)*width + (imgObj.width/2)*(width/canvas.width),
-                     (imgObj.y/canvas.height)*height + (imgObj.height/2)*(height/canvas.height));
+    tmpCtx.translate((imgObj.x/canvas.width)*width+(imgObj.width/2)*(width/canvas.width),
+                     (imgObj.y/canvas.height)*height+(imgObj.height/2)*(height/canvas.height));
     tmpCtx.scale(imgObj.flip?-1:1,1);
     tmpCtx.drawImage(imgObj.img,
       -(imgObj.width/2)*(width/canvas.width),
@@ -382,13 +338,11 @@ document.getElementById('saveImageBtn').onclick=()=>{
     tmpCtx.restore();
   });
 
-  // 🔹 Водяной знак
   tmpCtx.save();
-  tmpCtx.font = "italic 16px cursive";
-  tmpCtx.fillStyle = "rgba(255,255,255,0.2)";
-  tmpCtx.textAlign = "right";
-  tmpCtx.textBaseline = "bottom";
-  tmpCtx.fillText("Редактор обложек для вк", width - 12, height - 8);
+  tmpCtx.font="italic 16px cursive";
+  tmpCtx.fillStyle="rgba(255,255,255,0.2)";
+  tmpCtx.textAlign="right"; tmpCtx.textBaseline="bottom";
+  tmpCtx.fillText("Редактор обложек для вк",width-12,height-8);
   tmpCtx.restore();
 
   const link=document.createElement('a');
@@ -399,16 +353,20 @@ document.getElementById('saveImageBtn').onclick=()=>{
 
 draw();
 
-// ===== Код модального окна =====
-const helpBtn = document.getElementById("helpBtn");
-const helpModal = document.getElementById("helpModal");
-const closeBtn = document.querySelector(".modal .close");
+// ===== Модальное окно с видео паузой =====
+const helpBtn=document.getElementById("helpBtn");
+const helpModal=document.getElementById("helpModal");
+const closeBtn=document.querySelector(".modal .close");
+const helpVideo=helpModal.querySelector("video");
 
-helpBtn.onclick = () => { helpModal.style.display = "block"; };
-closeBtn.onclick = () => { helpModal.style.display = "none"; };
-window.onclick = (e) => { if (e.target === helpModal) helpModal.style.display = "none"; };
+helpBtn.onclick=()=>{ helpModal.style.display="block"; };
+function closeHelpModal(){
+  helpModal.style.display="none";
+  if(helpVideo){ helpVideo.pause(); helpVideo.currentTime=0; }
+}
+closeBtn.onclick=closeHelpModal;
+window.onclick=(e)=>{ if(e.target===helpModal) closeHelpModal(); };
 </script>
 
 </body>
 </html>
-
