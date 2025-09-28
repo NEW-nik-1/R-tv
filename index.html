@@ -448,11 +448,57 @@
   <script>
     /* --- Данные радиостанций и игр --- */
     const RADIO_CHANNELS = [
-      { name: "Радио Рекорд", url: "https://radiorecord.hostingradio.ru/rr_main96.aacp" },
-      { name: "Наше радио", url: "https://nashe1.hostingradio.ru/nashe-256" },
-      { name: "Радио Шкипер", url: "https://myradio24.org/bolshevek" },
-      { name: "Радио Лучшие Песни", url: "https://rbs.amgradio.ru/rbs?r_bells" },
-      { name: "Радио Движение", url: "https://c4.radioboss.fm:18218/stream" }
+{ name: "Европа плюс", url: "https://ep256.hostingradio.ru:8052/europaplus256.mp3" },
+{ name: "Радио Рекорд", url: "https://radiorecord.hostingradio.ru/rr_main96.aacp" },
+{ name: "Наше радио", url: "https://nashe1.hostingradio.ru/nashe-256" },
+{ name: "Авторадио", url: "https://pub0101.101.ru/stream/air/aac/64/100" },
+{ name: "Радио Energy", url: "https://pub0202.101.ru:8443/stream/air/aac/64/99" },
+{ name: "Kiss FM", url: "https://radiopotok2.online/http://online.kissfm.ua/KissFM_HD" },
+{ name: "Ретро ФМ", url: "https://retro.hostingradio.ru:8043/retro256.mp3" },
+{ name: "Русское радио", url: "https://rusradio.hostingradio.ru/rusradio96.aacp" },
+{ name: "Маруся ФМ", url: "https://cdn.radio-holding.ru/marusya_default" },
+{ name: "Record Russian Mix", url: "https://radiorecord.hostingradio.ru/rus96.aacp" },
+{ name: "Радио Максимум", url: "https://maximum.hostingradio.ru/maximum96.aacp" },
+{ name: "Ретро Хит", url: "https://retro.amgradio.ru/Retro?r_bells" },
+{ name: "Пиратская станция", url: "https://radiorecord.hostingradio.ru/ps96.aacp" },
+{ name: "ROCK FM", url: "https://nashe1.hostingradio.ru/rock-128.mp3" },
+{ name: "Хит FM", url: "https://hitfm.hostingradio.ru/hitfm96.aacp" },
+{ name: "Юмор FM", url: "https://pub0302.101.ru:8443/stream/air/aac/64/102" },
+{ name: "Супердискотека 90-х", url: "https://radiorecord.hostingradio.ru/sd9096.aacp" },
+{ name: "90s Eurodance", url: "https://listen1.myradio24.com/5967" },
+{ name: "Enigmatic Station 3", url: "https://radio.enigmatic.su:8005/radio" },
+{ name: "DFM Дискач 90-ых", url: "https://dfm-disc90.hostingradio.ru/disc9096.aacp" },
+{ name: "Record Megamix", url: "https://radiorecord.hostingradio.ru/mix96.aacp" },
+{ name: "Россия 90-ых", url: "https://pub0102.101.ru:8443/stream/pro/aac/64/33" },
+{ name: "Record Future House", url: "https://radiorecord.hostingradio.ru/fut96.aacp" },
+{ name: "Радио СССР 50-70", url: "https://pub0302.101.ru:8000/stream/pro/aac/64/47?" },
+{ name: "Родные Песни", url: "https://rodpesni.amgradio.ru/rp?r_bells" },
+{ name: "Рок Арсенал", url: "https://online.rockarsenal.ru/rockwotalk" },
+{ name: "Дискотека 90-ых", url: "https://pub0302.101.ru:8443/stream/pro/aac/64/74" },
+{ name: "PromoDJ Strange", url: "https://radio.promodj.com/strange-192" },
+{ name: "The Disco Palace Radio", url: "https://broadcast.miami/proxy/thediscopalace?mp=/stream/" },
+{ name: "Dancing Fox", url: "https://stream.cassiopeia-station.ru:1135/stream" },
+{ name: "Милицейская волна", url: "https://radiomv.hostingradio.ru:80/radiomv128.mp3" },
+{ name: "Хит FM Хит 2000-х", url: "https://hitfm-hit2000.hostingradio.ru/hit200096.aacp" },
+{ name: "Record Gold", url: "https://radiorecord.hostingradio.ru/gold96.aacp" },
+{ name: "RockTime Radio", url: "https://listen.myrh.ru/rocktimeradio" },
+{ name: "NRJ Techno", url: "https://pub0202.101.ru:8000/stream/trust/mp3/128/18?" },
+{ name: "Remix FM", url: "https://rmx.amgradio.ru/RemixFM?r_bells" },
+{ name: "Русский шансон 24", url: "https://stream.vyshka24.ru/russhanson24" },
+{ name: "Русские песни", url: "https://rusongs.amgradio.ru/rusongs?r_bells" },
+{ name: "Sector Next  / 90s", url: "https://radiopotok2.online/http://89.223.45.5:8000/next-160" },
+{ name: "Шансон Радио", url: "https://listen7.myradio24.com/75853" },
+{ name: "Радио Калейдоскоп: Шансон", url: "https://listen7.myradio24.com/22602" },
+{ name: "Хорошее радио", url: "https://hr.amgradio.ru/Horoshee?r_bells" },
+{ name: "Happy Radio", url: "https://stream-38.zeno.fm/nkeaps48xg0uv?" },
+{ name: "PRO Dj Radio", url: "https://live.prodjradio.net:8065/radio" },
+{ name: "Russian Deep Radio", url: "https://radiopotok2.online/http://radio.rudeep.ru:8000/stream" },
+{ name: "PromoDJ Top100", url: "https://radio.promodj.com/top100-192" },
+{ name: "Record Dream Dance", url: "https://radiorecord.hostingradio.ru/dream96.aacp" },
+{ name: "PromoDJ POP", url: "https://radio.promodj.com/pop-192" },
+{ name: "NRJ Dance", url: "https://pub0302.101.ru:8000/stream/pro/aac/64/443?" },
+{ name: "Record Russian Hits", url: "https://radiorecord.hostingradio.ru/russianhits96.aacp" },
+{ name: "Record House Classics", url: "https://radiorecord.hostingradio.ru/houseclss96.aacp" }
     ];
     const GAMES = [
       { name: "Gary's World", url: "https://html5.gamemonetize.co/dd5rs8etri5hw51g32sk69qfdoov5tq2/" },
@@ -644,3 +690,4 @@
   </script>
 </body>
 </html>
+
