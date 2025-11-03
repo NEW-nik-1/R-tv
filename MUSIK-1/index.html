@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>VK Audio Player</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #player audio { display: block; margin-bottom: 10px; }
+    #login { padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>VK Audio Player</h1>
+  <button id="login">Войти через VK</button>
+  <div id="player"></div>
+
+  <!-- Подключаем VK Open API -->
+  <script src="https://vk.com/js/api/openapi.js?169"></script>
+  <script>
+    const appId = 'ВАШ_APP_ID'; // Вставьте сюда ваш App ID VK
+
+    document.getElementById('login').onclick = () => {
+      VK.init({ apiId: appId });
+
+      VK.Auth.login((response) => {
+        if (response.session) {
+          alert('Авторизация успешна!');
+
+          // Получаем аудиозаписи пользователя
+          VK.Api.call('audio.get', {owner_id: response.session.mid, count: 10}, (r) => {
+            if(r.response) {
+              const playerDiv = document.getElementById('player');
+              playerDiv.innerHTML = ''; // Очищаем старый список
+              
+              r.response.items.forEach(track => {
+                const trackDiv = document.createElement('div');
+                trackDiv.style.marginBottom = '10px';
+
+                const title = document.createElement('p');
+                title.textContent = `${track.artist} - ${track.title}`;
+                trackDiv.appendChild(title);
+
+                const audio = document.createElement('audio');
+                audio.controls = true;
+                audio.src = track.url;
+                trackDiv.appendChild(audio);
+
+                playerDiv.appendChild(trackDiv);
+              });
+            } else {
+              alert('Не удалось получить аудиозаписи');
+            }
+          });
+
+        } else {
+          alert('Авторизация не прошла');
+        }
+      }, VK.access.AUDIO);
+    };
+  </script>
+</body>
+</html>
