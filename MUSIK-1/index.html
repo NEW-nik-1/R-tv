@@ -14,7 +14,7 @@ const progressContainer = document.getElementById('progressContainer');
     await vkBridge.send('VKWebAppInit');
     // Пробуем автоматическую авторизацию
     const auth = await vkBridge.send('VKWebAppGetAuthToken', {
-      app_id: 54292239, // замените на свой App ID
+      app_id:54292239, // замените на свой App ID
       scope: 'audio'
     });
 
@@ -139,3 +139,4 @@ document.getElementById('login').onclick = async () => {
   }
 };
 </script>
+
