@@ -1,55 +1,225 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>VK Mini App Audio Example</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
-    img { border-radius: 50%; margin-bottom: 10px; }
-    button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
-    audio { margin-top: 10px; display: block; }
-  </style>
+<meta charset="UTF-8">
+<title>VK Audio Player</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: #f4f4f4;
+  }
+  #login {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin-bottom: 20px;
+    cursor: pointer;
+  }
+  #player {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    max-width: 500px;
+    overflow-y: auto;
+    max-height: 400px;
+  }
+  .track {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .track.active {
+    background: #e0f7fa;
+  }
+  .track img {
+    width: 50px;
+    height: 50px;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+  .track-info {
+    flex: 1;
+  }
+  .track-info p {
+    margin: 0;
+  }
+  .controls {
+    text-align: center;
+    margin-top: 15px;
+  }
+  .controls button {
+    padding: 10px 15px;
+    margin: 0 5px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #progressContainer {
+    width: 100%;
+    background: #ddd;
+    height: 8px;
+    border-radius: 4px;
+    margin-top: 10px;
+    cursor: pointer;
+  }
+  #progress {
+    height: 100%;
+    width: 0%;
+    background: #26c6da;
+    border-radius: 4px;
+  }
+</style>
 </head>
 <body>
-  <h1>VK Mini App Audio Example</h1>
-  <div id="user-info"></div>
-  <div id="player"></div>
 
-  <!-- VK Bridge -->
-  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
-  <script>
-    (async () => {
-      try {
-        // Инициализация VK Mini App
-        await vkBridge.send('VKWebAppInit');
-        console.log('VK Bridge инициализирован');
+<h1>VK Audio Player</h1>
+<button id="login">Войти через VK</button>
+<div id="player"></div>
+<div class="controls">
+  <button id="prev">⏮️</button>
+  <button id="playPause">▶️</button>
+  <button id="next">⏭️</button>
+  <div id="progressContainer">
+    <div id="progress"></div>
+  </div>
+</div>
 
-        // Получаем информацию о пользователе
-        const user = await vkBridge.send('VKWebAppGetUserInfo');
-        console.log(user);
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+  let audioList = [];
+  let currentTrackIndex = 0;
+  let audio = new Audio();
 
-        const userDiv = document.getElementById('user-info');
-        userDiv.innerHTML = `
-          <img src="${user.photo_200}" width="100" height="100">
-          <p>${user.first_name} ${user.last_name}</p>
-        `;
+  const playerDiv = document.getElementById('player');
+  const playPauseBtn = document.getElementById('playPause');
+  const progress = document.getElementById('progress');
+  const progressContainer = document.getElementById('progressContainer');
 
-        // Добавляем кнопку для проигрывания аудио (пример с публичной ссылкой)
-        const playerDiv = document.getElementById('player');
-        const btn = document.createElement('button');
-        btn.textContent = "Воспроизвести аудио";
-        btn.onclick = () => {
-          const audio = document.createElement('audio');
-          audio.controls = true;
-          audio.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"; // публичный трек
-          playerDiv.appendChild(audio);
-        };
-        playerDiv.appendChild(btn);
+  // Инициализация VK Bridge
+  (async () => {
+    try {
+      await vkBridge.send('VKWebAppInit');
+    } catch(e) {
+      console.warn('VK Bridge initialization failed', e);
+    }
+  })();
 
-      } catch (e) {
-        console.warn('Ошибка VK Bridge:', e);
+  // Авторизация через VK
+  document.getElementById('login').onclick = async () => {
+    try {
+      const auth = await vkBridge.send('VKWebAppGetAuthToken', {
+        app_id:54292239, // замените на ваш App ID
+        scope: 'audio'
+      });
+
+      if(auth && auth.access_token) {
+        alert('Авторизация успешна!');
+        // Получаем аудио пользователя
+        const resp = await vkBridge.send('VKWebAppCallAPIMethod', {
+          method: 'audio.get',
+          params: {
+            access_token: auth.access_token,
+            v: '5.131',
+            count: 20
+          }
+        });
+        if(resp.response && resp.response.items.length > 0) {
+          audioList = resp.response.items;
+          currentTrackIndex = 0;
+          playTrack(currentTrackIndex);
+        } else {
+          alert('Нет аудиозаписей или доступ запрещен');
+        }
+      } else {
+        alert('Авторизация не прошла');
       }
-    })();
-  </script>
+    } catch(e) {
+      console.error(e);
+      alert('Ошибка авторизации или получения аудио');
+    }
+  };
+
+  // Рендер треков
+  function renderTracks() {
+    playerDiv.innerHTML = '';
+    audioList.forEach((track, i) => {
+      const trackDiv = document.createElement('div');
+      trackDiv.className = 'track' + (i === currentTrackIndex ? ' active' : '');
+      trackDiv.onclick = () => {
+        currentTrackIndex = i;
+        playTrack(currentTrackIndex);
+      };
+
+      const img = document.createElement('img');
+      img.src = track.album?.thumb?.src || track.thumb?.photo_50 || 'https://vk.com/images/deactivated_200.png';
+      trackDiv.appendChild(img);
+
+      const info = document.createElement('div');
+      info.className = 'track-info';
+      const title = document.createElement('p');
+      title.textContent = track.artist + ' - ' + track.title;
+      info.appendChild(title);
+      trackDiv.appendChild(info);
+
+      playerDiv.appendChild(trackDiv);
+    });
+
+    const activeTrack = playerDiv.querySelector('.track.active');
+    if(activeTrack) activeTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Проигрывание трека
+  function playTrack(index) {
+    if(!audioList[index]) return;
+    audio.src = audioList[index].url;
+    audio.play().catch(e => console.warn('Ошибка воспроизведения', e));
+    renderTracks();
+  }
+
+  // Кнопки управления
+  document.getElementById('prev').onclick = () => {
+    currentTrackIndex = (currentTrackIndex - 1 + audioList.length) % audioList.length;
+    playTrack(currentTrackIndex);
+  };
+
+  document.getElementById('next').onclick = () => {
+    currentTrackIndex = (currentTrackIndex + 1) % audioList.length;
+    playTrack(currentTrackIndex);
+  };
+
+  // Play/Pause
+  playPauseBtn.onclick = () => {
+    if(audio.paused) audio.play();
+    else audio.pause();
+  };
+
+  audio.addEventListener('play', () => playPauseBtn.textContent = '⏸️');
+  audio.addEventListener('pause', () => playPauseBtn.textContent = '▶️');
+
+  // Автопереход к следующему треку
+  audio.addEventListener('ended', () => {
+    currentTrackIndex = (currentTrackIndex + 1) % audioList.length;
+    playTrack(currentTrackIndex);
+  });
+
+  // Прогресс бар
+  audio.addEventListener('timeupdate', () => {
+    const percent = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+    progress.style.width = percent + '%';
+  });
+
+  progressContainer.onclick = (e) => {
+    const rect = progressContainer.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const percent = clickX / width;
+    audio.currentTime = percent * audio.duration;
+  };
+</script>
+
 </body>
 </html>
