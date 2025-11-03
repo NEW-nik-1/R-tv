@@ -111,7 +111,7 @@ const progressContainer = document.getElementById('progressContainer');
 document.getElementById('login').onclick = async () => {
   try {
     const auth = await vkBridge.send('VKWebAppGetAuthToken', {
-      app_id: 54292239, // Замените на свой VK App ID
+      app_id:54292239, // Замените на свой VK App ID
       scope: 'audio'
     });
 
@@ -225,3 +225,4 @@ progressContainer.onclick = (e) => {
 
 </body>
 </html>
+
