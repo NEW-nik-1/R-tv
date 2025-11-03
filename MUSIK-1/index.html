@@ -2,62 +2,54 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>VK Audio Player</title>
+  <title>VK Mini App Audio Example</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #player audio { display: block; margin-bottom: 10px; }
-    #login { padding: 10px 20px; font-size: 16px; }
+    body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+    img { border-radius: 50%; margin-bottom: 10px; }
+    button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
+    audio { margin-top: 10px; display: block; }
   </style>
 </head>
 <body>
-  <h1>VK Audio Player</h1>
-  <button id="login">Войти через VK</button>
+  <h1>VK Mini App Audio Example</h1>
+  <div id="user-info"></div>
   <div id="player"></div>
 
-  <!-- Подключаем VK Open API -->
-  <script src="https://vk.com/js/api/openapi.js?169"></script>
+  <!-- VK Bridge -->
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <script>
-    const appId = '54292239'; // Вставьте сюда ваш App ID VK
+    (async () => {
+      try {
+        // Инициализация VK Mini App
+        await vkBridge.send('VKWebAppInit');
+        console.log('VK Bridge инициализирован');
 
-    document.getElementById('login').onclick = () => {
-      VK.init({ apiId: appId });
+        // Получаем информацию о пользователе
+        const user = await vkBridge.send('VKWebAppGetUserInfo');
+        console.log(user);
 
-      VK.Auth.login((response) => {
-        if (response.session) {
-          alert('Авторизация успешна!');
+        const userDiv = document.getElementById('user-info');
+        userDiv.innerHTML = `
+          <img src="${user.photo_200}" width="100" height="100">
+          <p>${user.first_name} ${user.last_name}</p>
+        `;
 
-          // Получаем аудиозаписи пользователя
-          VK.Api.call('audio.get', {owner_id: response.session.mid, count: 10}, (r) => {
-            if(r.response) {
-              const playerDiv = document.getElementById('player');
-              playerDiv.innerHTML = ''; // Очищаем старый список
-              
-              r.response.items.forEach(track => {
-                const trackDiv = document.createElement('div');
-                trackDiv.style.marginBottom = '10px';
+        // Добавляем кнопку для проигрывания аудио (пример с публичной ссылкой)
+        const playerDiv = document.getElementById('player');
+        const btn = document.createElement('button');
+        btn.textContent = "Воспроизвести аудио";
+        btn.onclick = () => {
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"; // публичный трек
+          playerDiv.appendChild(audio);
+        };
+        playerDiv.appendChild(btn);
 
-                const title = document.createElement('p');
-                title.textContent = `${track.artist} - ${track.title}`;
-                trackDiv.appendChild(title);
-
-                const audio = document.createElement('audio');
-                audio.controls = true;
-                audio.src = track.url;
-                trackDiv.appendChild(audio);
-
-                playerDiv.appendChild(trackDiv);
-              });
-            } else {
-              alert('Не удалось получить аудиозаписи');
-            }
-          });
-
-        } else {
-          alert('Авторизация не прошла');
-        }
-      }, VK.access.AUDIO);
-    };
+      } catch (e) {
+        console.warn('Ошибка VK Bridge:', e);
+      }
+    })();
   </script>
 </body>
 </html>
-
