@@ -90,135 +90,137 @@
 
 <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
 <script>
-  let audioList = [];
-  let currentTrackIndex = 0;
-  let audio = new Audio();
+let audioList = [];
+let currentTrackIndex = 0;
+let audio = new Audio();
 
-  const playerDiv = document.getElementById('player');
-  const playPauseBtn = document.getElementById('playPause');
-  const progress = document.getElementById('progress');
-  const progressContainer = document.getElementById('progressContainer');
+const playerDiv = document.getElementById('player');
+const playPauseBtn = document.getElementById('playPause');
+const progress = document.getElementById('progress');
+const progressContainer = document.getElementById('progressContainer');
 
-  // Инициализация VK Bridge
-  (async () => {
-    try {
-      await vkBridge.send('VKWebAppInit');
-    } catch(e) {
-      console.warn('VK Bridge initialization failed', e);
-    }
-  })();
+(async () => {
+  try {
+    await vkBridge.send('VKWebAppInit');
+  } catch(e) {
+    console.warn('VK Bridge initialization failed', e);
+  }
+})();
 
-  // Авторизация через VK
-  document.getElementById('login').onclick = async () => {
-    try {
-      const auth = await vkBridge.send('VKWebAppGetAuthToken', {
-        app_id:54292239, // замените на ваш App ID
-        scope: 'audio'
-      });
-
-      if(auth && auth.access_token) {
-        alert('Авторизация успешна!');
-        // Получаем аудио пользователя
-        const resp = await vkBridge.send('VKWebAppCallAPIMethod', {
-          method: 'audio.get',
-          params: {
-            access_token: auth.access_token,
-            v: '5.131',
-            count: 20
-          }
-        });
-        if(resp.response && resp.response.items.length > 0) {
-          audioList = resp.response.items;
-          currentTrackIndex = 0;
-          playTrack(currentTrackIndex);
-        } else {
-          alert('Нет аудиозаписей или доступ запрещен');
-        }
-      } else {
-        alert('Авторизация не прошла');
-      }
-    } catch(e) {
-      console.error(e);
-      alert('Ошибка авторизации или получения аудио');
-    }
-  };
-
-  // Рендер треков
-  function renderTracks() {
-    playerDiv.innerHTML = '';
-    audioList.forEach((track, i) => {
-      const trackDiv = document.createElement('div');
-      trackDiv.className = 'track' + (i === currentTrackIndex ? ' active' : '');
-      trackDiv.onclick = () => {
-        currentTrackIndex = i;
-        playTrack(currentTrackIndex);
-      };
-
-      const img = document.createElement('img');
-      img.src = track.album?.thumb?.src || track.thumb?.photo_50 || 'https://vk.com/images/deactivated_200.png';
-      trackDiv.appendChild(img);
-
-      const info = document.createElement('div');
-      info.className = 'track-info';
-      const title = document.createElement('p');
-      title.textContent = track.artist + ' - ' + track.title;
-      info.appendChild(title);
-      trackDiv.appendChild(info);
-
-      playerDiv.appendChild(trackDiv);
+// Авторизация через VK и получение аудио
+document.getElementById('login').onclick = async () => {
+  try {
+    const auth = await vkBridge.send('VKWebAppGetAuthToken', {
+      app_id: 54292239, // Замените на свой VK App ID
+      scope: 'audio'
     });
 
-    const activeTrack = playerDiv.querySelector('.track.active');
-    if(activeTrack) activeTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if(auth.access_token) {
+      alert('Авторизация успешна!');
+
+      // Получаем аудиозаписи пользователя
+      const resp = await vkBridge.send('VKWebAppCallAPIMethod', {
+        method: 'audio.get',
+        params: {
+          access_token: auth.access_token,
+          v: '5.131',
+          count: 20
+        }
+      });
+
+      if(resp.response && resp.response.items.length > 0) {
+        audioList = resp.response.items;
+        currentTrackIndex = 0;
+        playTrack(currentTrackIndex);
+      } else {
+        alert('Нет аудиозаписей или доступ запрещен');
+      }
+    } else {
+      alert('Авторизация не прошла');
+    }
+  } catch(e) {
+    console.error(e);
+    alert('Ошибка авторизации или получения аудио');
   }
+};
 
-  // Проигрывание трека
-  function playTrack(index) {
-    if(!audioList[index]) return;
-    audio.src = audioList[index].url;
-    audio.play().catch(e => console.warn('Ошибка воспроизведения', e));
-    renderTracks();
-  }
+// Рендер треков
+function renderTracks() {
+  playerDiv.innerHTML = '';
+  audioList.forEach((track, i) => {
+    const trackDiv = document.createElement('div');
+    trackDiv.className = 'track' + (i === currentTrackIndex ? ' active' : '');
+    trackDiv.onclick = () => {
+      currentTrackIndex = i;
+      playTrack(currentTrackIndex);
+    };
 
-  // Кнопки управления
-  document.getElementById('prev').onclick = () => {
-    currentTrackIndex = (currentTrackIndex - 1 + audioList.length) % audioList.length;
-    playTrack(currentTrackIndex);
-  };
+    const img = document.createElement('img');
+    img.src = track.album?.thumb?.src || track.thumb?.photo_50 || 'https://vk.com/images/deactivated_200.png';
+    trackDiv.appendChild(img);
 
-  document.getElementById('next').onclick = () => {
-    currentTrackIndex = (currentTrackIndex + 1) % audioList.length;
-    playTrack(currentTrackIndex);
-  };
+    const info = document.createElement('div');
+    info.className = 'track-info';
+    const title = document.createElement('p');
+    title.textContent = track.artist + ' - ' + track.title;
+    info.appendChild(title);
+    trackDiv.appendChild(info);
 
-  // Play/Pause
-  playPauseBtn.onclick = () => {
-    if(audio.paused) audio.play();
-    else audio.pause();
-  };
-
-  audio.addEventListener('play', () => playPauseBtn.textContent = '⏸️');
-  audio.addEventListener('pause', () => playPauseBtn.textContent = '▶️');
-
-  // Автопереход к следующему треку
-  audio.addEventListener('ended', () => {
-    currentTrackIndex = (currentTrackIndex + 1) % audioList.length;
-    playTrack(currentTrackIndex);
+    playerDiv.appendChild(trackDiv);
   });
 
-  // Прогресс бар
-  audio.addEventListener('timeupdate', () => {
-    const percent = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-    progress.style.width = percent + '%';
-  });
+  const activeTrack = playerDiv.querySelector('.track.active');
+  if(activeTrack) activeTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 
-  progressContainer.onclick = (e) => {
-    const rect = progressContainer.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const width = rect.width;
-    const percent = clickX / width;
-    audio.currentTime = percent * audio.duration;
-  };
+// Проигрывание трека
+function playTrack(index) {
+  if(!audioList[index]) return;
+  audio.src = audioList[index].url;
+  audio.play().catch(e => console.warn('Ошибка воспроизведения', e));
+  renderTracks();
+}
+
+// Кнопки управления
+document.getElementById('prev').onclick = () => {
+  currentTrackIndex = (currentTrackIndex - 1 + audioList.length) % audioList.length;
+  playTrack(currentTrackIndex);
+};
+
+document.getElementById('next').onclick = () => {
+  currentTrackIndex = (currentTrackIndex + 1) % audioList.length;
+  playTrack(currentTrackIndex);
+};
+
+// Play/Pause
+playPauseBtn.onclick = () => {
+  if(audio.paused) audio.play();
+  else audio.pause();
+};
+
+// Обновление кнопки Play/Pause
+audio.addEventListener('play', () => playPauseBtn.textContent = '⏸️');
+audio.addEventListener('pause', () => playPauseBtn.textContent = '▶️');
+
+// Автопереход к следующему треку
+audio.addEventListener('ended', () => {
+  currentTrackIndex = (currentTrackIndex + 1) % audioList.length;
+  playTrack(currentTrackIndex);
+});
+
+// Прогресс бар
+audio.addEventListener('timeupdate', () => {
+  const percent = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+  progress.style.width = percent + '%';
+});
+
+progressContainer.onclick = (e) => {
+  const rect = progressContainer.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const width = rect.width;
+  const percent = clickX / width;
+  audio.currentTime = percent * audio.duration;
+};
 </script>
 
 </body>
