@@ -2,14 +2,14 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<title>VK Mini App - Поиск песен с модальным окном</title>
+<title>VK Mini App - Поиск открытых песен</title>
 <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
 <style>
   body { font-family: Arial, sans-serif; padding: 20px; }
   #playlist div { padding: 5px; cursor: pointer; border-bottom: 1px solid #ccc; }
   #playlist div:hover { background: #f0f0f0; }
   #playlist .active { font-weight: bold; background: #ddd; }
-  button { padding: 8px 12px; font-size: 16px; }
+  button { padding: 8px 12px; font-size: 16px; cursor: pointer; }
   /* Модальное окно */
   #modal {
     display: none;
@@ -56,7 +56,7 @@
 </head>
 <body>
 
-<h2>VK Mini App - Аудиоплеер</h2>
+<h2>VK Mini App - Аудиоплеер с поиском</h2>
 <button id="openSearch">Поиск песен</button>
 
 <h3>Плейлист:</h3>
@@ -114,7 +114,7 @@ audioPlayer.onended = () => {
   playTrack(next);
 };
 
-// Открыть модальное окно поиска
+// Открываем модальное окно поиска песен
 openSearchBtn.onclick = () => {
   modal.style.display = 'flex';
   searchInput.value = '';
@@ -122,15 +122,16 @@ openSearchBtn.onclick = () => {
   searchInput.focus();
 };
 
-// Закрыть модальное окно
+// Закрываем модальное окно
 closeModalBtn.onclick = () => {
   modal.style.display = 'none';
 };
 
+// Запрашиваем токен с правами audio
 async function getAccessToken() {
   try {
     const auth = await vkBridge.send('VKWebAppGetAuthToken', {
-      app_id: 54292239, // замените на ваш ID приложения
+      app_id: 54292239, // Ваш ID приложения
       scope: 'audio'
     });
     return auth.access_token;
@@ -140,6 +141,7 @@ async function getAccessToken() {
   }
 }
 
+// Поиск аудио через VK API
 async function searchAudioVK(query, token) {
   if (!query || !token) return [];
   try {
@@ -148,7 +150,7 @@ async function searchAudioVK(query, token) {
       params: {
         q: query,
         count: 20,
-        sort: 2, // для более релевантных результатов
+        sort: 2,
         access_token: token,
         v: '5.131'
       }
@@ -160,6 +162,7 @@ async function searchAudioVK(query, token) {
   }
 }
 
+// Вызывается при нажатии кнопки "Поиск" в модальном окне
 searchBtn.onclick = async () => {
   const query = searchInput.value.trim();
   if (!query) return;
