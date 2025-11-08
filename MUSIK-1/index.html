@@ -48,7 +48,7 @@ async function initializeVKBridge() {
 async function authorize() {
   try {
     const auth = await vkBridge.send('VKWebAppGetAuthToken', {
-      app_id: VK_APP_ID,
+      app_id: 54306429,
       scope: 'audio'
     });
     accessToken = auth.access_token;
@@ -105,3 +105,4 @@ initializeVKBridge();
 
 </body>
 </html>
+
