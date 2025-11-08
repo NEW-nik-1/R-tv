@@ -2,95 +2,67 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VK Mini App с Jamendo API</title>
-<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; }
-  button { font-size: 16px; margin: 5px; padding: 10px 15px; cursor: pointer;}
-  pre { white-space: pre-wrap; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; }
-  input { font-size: 16px; padding: 5px; width: 300px; }
-  audio { width: 100%; margin-top: 10px; }
-</style>
+<title>Пример Зайцев.НЕТ API</title>
+<script src="https://cdn.jsdelivr.net/npm/js-md5@0.7.3/build/md5.min.js"></script>
 </head>
 <body>
-
-<h2>VK Mini App с Jamendo API</h2>
-
-<input type="text" id="searchInput" placeholder="Введите название песни или исполнителя" />
-<button id="btnSearch">Поиск</button>
-
+<h2>Поиск треков Зайцев.НЕТ через неофициальный API</h2>
+<input type="text" id="search" placeholder="Введите запрос" />
+<button onclick="search()">Искать</button>
 <pre id="output"></pre>
-<div id="audioContainer"></div>
 
 <script>
-const VK_APP_ID = 54306429;
-const CLIENT_ID = '6171ddad'; // Зарегистрируйтесь на https://developer.jamendo.com и получите client_id
+const API_BASE = 'https://api.zaycev.net/external';
+const STATIC_KEY = 'kmskoNdkYHDnl3ol3'; // ключ может варьироваться, зависит от версии клиента
 
-const vkBridge = window.vkBridge;
+let helloToken = '';
+let accessToken = '';
 const output = document.getElementById('output');
-const btnSearch = document.getElementById('btnSearch');
-const searchInput = document.getElementById('searchInput');
-const audioContainer = document.getElementById('audioContainer');
 
-function log(msg) {
-  output.textContent += msg + "\\n";
-  output.scrollTop = output.scrollHeight;
+async function hello() {
+  const res = await fetch(`${API_BASE}/hello`);
+  const data = await res.json();
+  helloToken = data.token;
 }
 
-async function initializeVKBridge() {
-  try {
-    await vkBridge.send('VKWebAppInit');
-    log('VK Bridge инициализирован');
-  } catch (e) {
-    log('Ошибка инициализации VK Bridge: ' + (e.message || e));
+async function auth() {
+  if (!helloToken) await hello();
+  const hash = md5(helloToken + STATIC_KEY);
+  const res = await fetch(`${API_BASE}/auth?code=${helloToken}&hash=${hash}`);
+  const data = await res.json();
+  if (data.token) {
+    accessToken = data.token;
+    output.textContent = 'Авторизация успешна. AccessToken получен.\n';
+  } else {
+    output.textContent = 'Ошибка авторизации\n' + JSON.stringify(data);
   }
 }
 
-async function searchJamendo(query) {
+async function search() {
   output.textContent = '';
-  audioContainer.innerHTML = '';
+  const query = document.getElementById('search').value.trim();
   if (!query) {
-    log('Введите запрос для поиска');
+    output.textContent = 'Введите поисковый запрос';
     return;
   }
-  try {
-    const url = `https://api.jamendo.com/v3.0/tracks/?client_id=${CLIENT_ID}&format=json&limit=10&search=${encodeURIComponent(query)}`;
-    const response = await fetch(url);
-    const data = await response.json();
+  if (!accessToken) {
+    await auth();
+  }
 
-    if (data.results && data.results.length > 0) {
-      log(`Найдено треков: ${data.results.length}`);
-      data.results.forEach((track, i) => {
-        log(`${i+1}. ${track.artist_name} — ${track.name}`);
+  const url = `${API_BASE}/search?query=${encodeURIComponent(query)}&page=1&type=track&sort=popular&style=&access_token=${accessToken}`;
+  const res = await fetch(url);
+  const data = await res.json();
 
-        // Добавляем аудиоплеер
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = track.audio;
-        audioContainer.appendChild(audio);
-
-        // Текстовое описание под аудиоплеером
-        const div = document.createElement('div');
-        div.textContent = `${track.artist_name} — ${track.name}`;
-        audioContainer.appendChild(div);
-      });
-    } else {
-      log('По вашему запросу треков не найдено.');
-    }
-  } catch (e) {
-    log('Ошибка при запросе к Jamendo API: ' + e.message);
+  if (data.results && data.results.length > 0) {
+    output.textContent += `Найдено ${data.results.length} треков:\n`;
+    data.results.forEach((track, i) => {
+      output.textContent += `${i + 1}. ${track.artist_name} — ${track.title}\n`;
+      output.textContent += `URL для воспроизведения: ${track.url}\n\n`;
+    });
+  } else {
+    output.textContent = 'Треков не найдено.';
   }
 }
-
-btnSearch.onclick = () => {
-  searchJamendo(searchInput.value.trim());
-};
-
-// Инициализация VK Bridge при загрузке страницы
-initializeVKBridge();
-
 </script>
 </body>
 </html>
-
