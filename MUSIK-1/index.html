@@ -131,7 +131,7 @@ closeModalBtn.onclick = () => {
 async function getAccessToken() {
   try {
     const auth = await vkBridge.send('VKWebAppGetAuthToken', {
-      app_id: 54292239, // Ваш ID приложения
+      app_id: 54306429, // Ваш ID приложения
       scope: 'audio'
     });
     return auth.access_token;
@@ -203,3 +203,4 @@ vkBridge.send('VKWebAppInit').then(() => {
 
 </body>
 </html>
+
