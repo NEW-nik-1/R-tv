@@ -7,14 +7,13 @@
 <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
 <style>
   body { font-family: Arial, sans-serif; padding: 20px; }
-  button { font-size: 16px; margin: 5px; padding: 10px 15px; }
+  button { font-size: 16px; margin: 5px; padding: 10px 15px; cursor: pointer;}
   pre { white-space: pre-wrap; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; }
 </style>
 </head>
 <body>
 
 <h2>Мини-приложение VK с VK Bridge</h2>
-
 <button id="btnAuth">Авторизация с доступом к аудио</button>
 <button id="btnSearchAudio">Поиск аудиозаписей</button>
 
@@ -22,17 +21,20 @@
 
 <script>
 const VK_APP_ID = 54306429;
+const vkBridge = window.vkBridge;
+
 const output = document.getElementById('output');
 const btnAuth = document.getElementById('btnAuth');
 const btnSearchAudio = document.getElementById('btnSearchAudio');
 
 let accessToken = null;
 
-async function log(msg) {
-  output.textContent += msg + '\\n';
+function log(msg) {
+  output.textContent += msg + "\\n";
   output.scrollTop = output.scrollHeight;
 }
 
+// Инициализация VK Bridge с обработкой ошибок
 async function initializeVKBridge() {
   try {
     await vkBridge.send('VKWebAppInit');
@@ -42,6 +44,7 @@ async function initializeVKBridge() {
   }
 }
 
+// Авторизация с запросом доступа к аудио
 async function authorize() {
   try {
     const auth = await vkBridge.send('VKWebAppGetAuthToken', {
@@ -58,6 +61,7 @@ async function authorize() {
   }
 }
 
+// Поиск аудиозаписей с обработкой возможных ограничений
 async function searchAudio() {
   if (!accessToken) {
     log('Сначала выполните авторизацию.');
@@ -73,6 +77,7 @@ async function searchAudio() {
         v: '5.131'
       }
     });
+
     if (response.response && response.response.items.length > 0) {
       log('Найденные аудиозаписи:');
       response.response.items.forEach((track, i) => {
@@ -86,12 +91,16 @@ async function searchAudio() {
   }
 }
 
+// Обработчики кнопок
 btnAuth.onclick = async () => {
   await initializeVKBridge();
   await authorize();
 };
 
 btnSearchAudio.onclick = searchAudio;
+
+// Автоматическая инициализация VK Bridge при загрузке страницы
+initializeVKBridge();
 </script>
 
 </body>
