@@ -2,80 +2,90 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<title>VK Mini App Авторизация и API</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VK Mini App с VK Bridge</title>
 <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  button { font-size: 1em; margin: 5px; padding: 10px; }
+  pre { white-space: pre-wrap; border: 1px solid #ddd; padding: 10px; max-height: 300px; overflow-y: auto; }
+</style>
 </head>
 <body>
 
-<h2>VK Mini App: Авторизация и вызов API</h2>
-<button id="authBtn">Авторизоваться и получить данные пользователя</button>
-<button id="audioBtn">Попробовать получить аудио (если доступно)</button>
+<h2>VK Mini App с VK Bridge</h2>
+
+<button id="btnAuth">Авторизоваться</button>
+<button id="btnGetAudio">Запросить аудио</button>
 
 <pre id="output"></pre>
 
 <script>
 const VK_APP_ID = 54306429; // Ваш ID приложения
+
 const output = document.getElementById('output');
+const btnAuth = document.getElementById('btnAuth');
+const btnGetAudio = document.getElementById('btnGetAudio');
 
-async function vkAuth() {
+let accessToken = null;
+
+async function log(text) {
+  output.textContent += text + "\n";
+  output.scrollTop = output.scrollHeight;
+}
+
+async function initializeVK() {
+  await vkBridge.send('VKWebAppInit');
+  await log('VK Bridge инициализирован');
+}
+
+btnAuth.onclick = async function() {
   try {
-    await vkBridge.send('VKWebAppInit');
-    output.textContent = 'VK Bridge инициализирован.\n';
+    await initializeVK();
 
-    // Получаем токен с правами на аудио
-    const auth = await vkBridge.send('VKWebAppGetAuthToken', {
+    const authData = await vkBridge.send('VKWebAppGetAuthToken', {
       app_id: VK_APP_ID,
       scope: 'audio'
     });
-    output.textContent += 'Токен получен: ' + auth.access_token + '\n';
 
-    // Получаем информацию о пользователе  
+    accessToken = authData.access_token;
+    await log('Авторизация успешна. Токен получен.');
+
     const user = await vkBridge.send('VKWebAppGetUserInfo');
-    output.textContent += 'Пользователь: ' + user.first_name + ' ' + user.last_name + '\n';
-
-    return auth.access_token;
+    await log(`Пользователь: ${user.first_name} ${user.last_name} (ID: ${user.id})`);
   } catch (error) {
-    output.textContent += 'Ошибка авторизации или доступа: ' + (error.message || JSON.stringify(error)) + '\n';
-    return null;
+    await log('Ошибка авторизации или получения данных пользователя: ' + (error.message || JSON.stringify(error)));
   }
-}
+};
 
-async function getAudio(accessToken) {
+btnGetAudio.onclick = async function() {
   if (!accessToken) {
-    output.textContent += 'Нет токена доступа. Сначала авторизуйтесь.\n';
+    await log('Сначала выполните авторизацию');
     return;
   }
+
   try {
     const response = await vkBridge.send('VKWebAppCallAPIMethod', {
       method: 'audio.search',
       params: {
-        q: 'test',
+        q: 'тест', // Пример запроса
         count: 5,
         access_token: accessToken,
         v: '5.131'
       }
     });
-    if (response.response && response.response.items) {
-      output.textContent += 'Аудиозаписи:\n';
-      response.response.items.forEach(track => {
-        output.textContent += `${track.artist} — ${track.title}\n`;
+
+    if (response.response && response.response.items.length > 0) {
+      await log('Результаты поиска аудио:');
+      response.response.items.forEach((track, i) => {
+        log(`${i+1}. ${track.artist} — ${track.title}`);
       });
     } else {
-      output.textContent += 'Аудио не найдено или доступ ограничен.\n';
+      await log('Аудио не найдено или доступ ограничен');
     }
   } catch (error) {
-    output.textContent += 'Ошибка при получении аудио: ' + (error.message || JSON.stringify(error)) + '\n';
+    await log('Ошибка при запросе аудио: ' + (error.message || JSON.stringify(error)));
   }
-}
-
-let currentToken = null;
-
-document.getElementById('authBtn').onclick = async () => {
-  currentToken = await vkAuth();
-};
-
-document.getElementById('audioBtn').onclick = async () => {
-  await getAudio(currentToken);
 };
 </script>
 
