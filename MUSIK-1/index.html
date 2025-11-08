@@ -1,1 +1,141 @@
-...........
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>VK Mini App - Поиск открытых песен</title>
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  #playlist div { padding: 5px; cursor: pointer; border-bottom: 1px solid #ccc; }
+  #playlist div:hover { background: #f0f0f0; }
+  #playlist .active { font-weight: bold; background: #ddd; }
+  #searchResults div { padding: 5px; border-bottom: 1px solid #ddd; }
+  button { margin-left: 10px; }
+</style>
+</head>
+<body>
+
+<h2>Поиск открытых песен ВКонтакте</h2>
+<div id="userInfo">Загрузка пользователя...</div>
+
+<input type="text" id="searchInput" placeholder="Введите название песни или исполнителя" />
+<button id="searchBtn">Поиск</button>
+
+<div id="searchResults"></div>
+
+<h3>Плейлист:</h3>
+<div id="playlist"></div>
+
+<audio id="audioPlayer" controls style="width: 100%; margin-top: 15px;"></audio>
+
+<script>
+const userInfoDiv = document.getElementById('userInfo');
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const searchResultsDiv = document.getElementById('searchResults');
+const playlistDiv = document.getElementById('playlist');
+const audioPlayer = document.getElementById('audioPlayer');
+
+let playlist = [];
+let currentTrackIndex = -1;
+
+function renderPlaylist() {
+  playlistDiv.innerHTML = '';
+  playlist.forEach((track, idx) => {
+    const div = document.createElement('div');
+    div.textContent = track.title + ' — ' + track.artist;
+    div.className = (idx === currentTrackIndex) ? 'active' : '';
+    div.onclick = () => playTrack(idx);
+    playlistDiv.appendChild(div);
+  });
+}
+
+function playTrack(index) {
+  currentTrackIndex = index;
+  audioPlayer.src = playlist[index].url;
+  audioPlayer.play();
+  renderPlaylist();
+}
+
+audioPlayer.onended = () => {
+  let next = currentTrackIndex + 1;
+  if (next >= playlist.length) next = 0;
+  playTrack(next);
+};
+
+async function vkAuth() {
+  await vkBridge.send('VKWebAppInit');
+  try {
+    const user = await vkBridge.send('VKWebAppGetUserInfo');
+    userInfoDiv.textContent = `Пользователь: ${user.first_name} ${user.last_name}`;
+    return user;
+  } catch {
+    userInfoDiv.textContent = 'Ошибка получения данных пользователя';
+  }
+}
+
+async function getAccessToken() {
+  try {
+    const auth = await vkBridge.send('VKWebAppGetAuthToken', {
+      app_id: YOUR_APP_ID, // замените на свой ID приложения
+      scope: 'audio'
+    });
+    return auth.access_token;
+  } catch (e) {
+    alert('Не удалось получить доступ к аудио: ' + e.message);
+  }
+}
+
+async function searchAudio(query, token) {
+  try {
+    const response = await vkBridge.send('VKWebAppCallAPIMethod', {
+      method: 'audio.search',
+      params: {
+        q: query,
+        access_token: token,
+        v: '5.131',
+        count: 20
+      }
+    });
+    return response.response.items;
+  } catch (e) {
+    alert('Ошибка поиска аудио: ' + e.message);
+    return [];
+  }
+}
+
+searchBtn.onclick = async () => {
+  const query = searchInput.value.trim();
+  if (!query) return;
+
+  const token = await getAccessToken();
+  if (!token) return;
+
+  const tracks = await searchAudio(query, token);
+
+  searchResultsDiv.innerHTML = '';
+  if (tracks.length === 0) {
+    searchResultsDiv.textContent = 'Ничего не найдено';
+    return;
+  }
+
+  tracks.forEach(track => {
+    const div = document.createElement('div');
+    div.textContent = `${track.artist} — ${track.title}`;
+    const btn = document.createElement('button');
+    btn.textContent = 'Добавить';
+    btn.onclick = () => {
+      playlist.push({title: track.title, artist: track.artist, url: track.url});
+      renderPlaylist();
+      if (currentTrackIndex === -1) playTrack(0);
+    };
+    div.appendChild(btn);
+    searchResultsDiv.appendChild(div);
+  });
+};
+
+vkAuth();
+</script>
+
+</body>
+</html>
