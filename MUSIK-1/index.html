@@ -2,205 +2,82 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<title>VK Mini App - Поиск открытых песен</title>
+<title>VK Mini App Авторизация и API</title>
 <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; }
-  #playlist div { padding: 5px; cursor: pointer; border-bottom: 1px solid #ccc; }
-  #playlist div:hover { background: #f0f0f0; }
-  #playlist .active { font-weight: bold; background: #ddd; }
-  button { padding: 8px 12px; font-size: 16px; cursor: pointer; }
-  /* Модальное окно */
-  #modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0; top: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    justify-content: center;
-    align-items: center;
-  }
-  #modalContent {
-    background: white;
-    padding: 20px;
-    width: 90%;
-    max-width: 500px;
-    border-radius: 8px;
-    max-height: 70vh;
-    display: flex;
-    flex-direction: column;
-  }
-  #searchResults {
-    overflow-y: auto;
-    max-height: 300px;
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-  }
-  #searchResults div {
-    padding: 8px;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-  }
-  #searchResults div:hover {
-    background-color: #f2f2f2;
-  }
-  #closeModal {
-    align-self: flex-end;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 18px;
-    margin-bottom: 5px;
-  }
-</style>
 </head>
 <body>
 
-<h2>VK Mini App - Аудиоплеер с поиском</h2>
-<button id="openSearch">Поиск песен</button>
+<h2>VK Mini App: Авторизация и вызов API</h2>
+<button id="authBtn">Авторизоваться и получить данные пользователя</button>
+<button id="audioBtn">Попробовать получить аудио (если доступно)</button>
 
-<h3>Плейлист:</h3>
-<div id="playlist"></div>
-
-<audio id="audioPlayer" controls style="width: 100%; margin-top: 15px;"></audio>
-
-<!-- Модальное окно -->
-<div id="modal">
-  <div id="modalContent">
-    <div id="closeModal">✖</div>
-    <input type="text" id="searchInput" placeholder="Введите название певца или песни" />
-    <button id="searchBtn">Поиск</button>
-    <div id="searchResults"></div>
-  </div>
-</div>
+<pre id="output"></pre>
 
 <script>
-const vkBridge = window.vkBridge;
+const VK_APP_ID = 54306429; // Ваш ID приложения
+const output = document.getElementById('output');
 
-const openSearchBtn = document.getElementById('openSearch');
-const modal = document.getElementById('modal');
-const closeModalBtn = document.getElementById('closeModal');
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const searchResultsDiv = document.getElementById('searchResults');
-const playlistDiv = document.getElementById('playlist');
-const audioPlayer = document.getElementById('audioPlayer');
-
-let playlist = [];
-let currentTrackIndex = -1;
-
-function renderPlaylist() {
-  playlistDiv.innerHTML = '';
-  playlist.forEach((track, idx) => {
-    const div = document.createElement('div');
-    div.textContent = `${track.artist} — ${track.title}`;
-    div.className = (idx === currentTrackIndex) ? 'active' : '';
-    div.onclick = () => playTrack(idx);
-    playlistDiv.appendChild(div);
-  });
-}
-
-function playTrack(index) {
-  if (index < 0 || index >= playlist.length) return;
-  currentTrackIndex = index;
-  audioPlayer.src = playlist[index].url;
-  audioPlayer.play();
-  renderPlaylist();
-}
-
-audioPlayer.onended = () => {
-  let next = currentTrackIndex + 1;
-  if (next >= playlist.length) next = 0;
-  playTrack(next);
-};
-
-// Открываем модальное окно поиска песен
-openSearchBtn.onclick = () => {
-  modal.style.display = 'flex';
-  searchInput.value = '';
-  searchResultsDiv.innerHTML = '';
-  searchInput.focus();
-};
-
-// Закрываем модальное окно
-closeModalBtn.onclick = () => {
-  modal.style.display = 'none';
-};
-
-// Запрашиваем токен с правами audio
-async function getAccessToken() {
+async function vkAuth() {
   try {
+    await vkBridge.send('VKWebAppInit');
+    output.textContent = 'VK Bridge инициализирован.\n';
+
+    // Получаем токен с правами на аудио
     const auth = await vkBridge.send('VKWebAppGetAuthToken', {
-      app_id: 54306429, // Ваш ID приложения
+      app_id: VK_APP_ID,
       scope: 'audio'
     });
+    output.textContent += 'Токен получен: ' + auth.access_token + '\n';
+
+    // Получаем информацию о пользователе  
+    const user = await vkBridge.send('VKWebAppGetUserInfo');
+    output.textContent += 'Пользователь: ' + user.first_name + ' ' + user.last_name + '\n';
+
     return auth.access_token;
-  } catch (e) {
-    alert('Не удалось получить доступ к аудио: ' + (e.message || JSON.stringify(e)));
+  } catch (error) {
+    output.textContent += 'Ошибка авторизации или доступа: ' + (error.message || JSON.stringify(error)) + '\n';
     return null;
   }
 }
 
-// Поиск аудио через VK API
-async function searchAudioVK(query, token) {
-  if (!query || !token) return [];
+async function getAudio(accessToken) {
+  if (!accessToken) {
+    output.textContent += 'Нет токена доступа. Сначала авторизуйтесь.\n';
+    return;
+  }
   try {
     const response = await vkBridge.send('VKWebAppCallAPIMethod', {
       method: 'audio.search',
       params: {
-        q: query,
-        count: 20,
-        sort: 2,
-        access_token: token,
+        q: 'test',
+        count: 5,
+        access_token: accessToken,
         v: '5.131'
       }
     });
-    return response.response.items;
-  } catch (e) {
-    alert('Ошибка поиска аудио: ' + (e.message || JSON.stringify(e)));
-    return [];
+    if (response.response && response.response.items) {
+      output.textContent += 'Аудиозаписи:\n';
+      response.response.items.forEach(track => {
+        output.textContent += `${track.artist} — ${track.title}\n`;
+      });
+    } else {
+      output.textContent += 'Аудио не найдено или доступ ограничен.\n';
+    }
+  } catch (error) {
+    output.textContent += 'Ошибка при получении аудио: ' + (error.message || JSON.stringify(error)) + '\n';
   }
 }
 
-// Вызывается при нажатии кнопки "Поиск" в модальном окне
-searchBtn.onclick = async () => {
-  const query = searchInput.value.trim();
-  if (!query) return;
-  searchResultsDiv.innerHTML = 'Поиск...';
+let currentToken = null;
 
-  const token = await getAccessToken();
-  if (!token) {
-    searchResultsDiv.innerHTML = 'Нет доступа к аудио';
-    return;
-  }
-
-  const results = await searchAudioVK(query, token);
-
-  if (!results.length) {
-    searchResultsDiv.innerHTML = 'Ничего не найдено';
-    return;
-  }
-
-  searchResultsDiv.innerHTML = '';
-  results.forEach(track => {
-    const div = document.createElement('div');
-    div.textContent = `${track.artist} — ${track.title}`;
-    div.onclick = () => {
-      playlist.push({title: track.title, artist: track.artist, url: track.url});
-      renderPlaylist();
-      if (currentTrackIndex === -1) playTrack(0);
-      modal.style.display = 'none'; // Закрыть окно после выбора
-    };
-    searchResultsDiv.appendChild(div);
-  });
+document.getElementById('authBtn').onclick = async () => {
+  currentToken = await vkAuth();
 };
 
-// Инициализация VK Mini App
-vkBridge.send('VKWebAppInit').then(() => {
-  console.log('VK Mini App Initialized');
-});
+document.getElementById('audioBtn').onclick = async () => {
+  await getAudio(currentToken);
+};
 </script>
 
 </body>
 </html>
-
