@@ -69,12 +69,26 @@
     Загрузка данных о группе...
   </div>
 
+  <!-- ✅ VK Bridge -->
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <script>
-    // 🔹 Укажи ID своего приложения VK (создать можно в dev.vk.com)
-    VK.init({ apiId: 54306429 }); // замени на свой app_id
+    (async () => {
+      try {
+        await vkBridge.send('VKWebAppInit');
+        console.log('✅ VK Bridge инициализирован');
+      } catch (e) {
+        console.warn('⚠️ VK Bridge initialization failed or unavailable', e);
+      }
+    })();
+  </script>
 
-    // 🔹 Название группы (или её ID)
-    const groupName = "notigorodov"; // пример: "vk", "public123456789", "club987654321"
+  <!-- ✅ VK API -->
+  <script>
+    // 🔹 Укажи ID своего приложения VK (из dev.vk.com/apps)
+    VK.init({ apiId: 1234567 }); // ← замени на свой app_id
+
+    // 🔹 Название или ID группы
+    const groupName = "vk"; // например, "public123456789" → "123456789"
 
     // 🔹 Запрос данных о группе
     VK.Api.call('groups.getById', {
