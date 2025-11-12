@@ -69,7 +69,7 @@
     Загрузка данных о группе...
   </div>
 
-  <!-- ✅ VK Bridge -->
+  <!-- VK Bridge для Mini Apps (не обязателен, но можно оставить) -->
   <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
   <script>
     (async () => {
@@ -82,13 +82,14 @@
     })();
   </script>
 
-  <!-- ✅ VK API -->
+  <!-- VK API -->
   <script>
-    // 🔹 Укажи ID своего приложения VK (из dev.vk.com/apps)
-    VK.init({ apiId: 1234567 }); // ← замени на свой app_id
+    // 🔹 Используем твой App ID
+    VK.init({ apiId: 54306429 });
 
-    // 🔹 Название или ID группы
-    const groupName = "vk"; // например, "public123456789" → "123456789"
+    // 🔹 Укажи ID или короткое имя группы VK
+    // Например, моя группа с коротким именем "notigorodov"
+    const groupName = "notigorodov";
 
     // 🔹 Запрос данных о группе
     VK.Api.call('groups.getById', {
@@ -105,6 +106,7 @@
         `;
       } else {
         document.getElementById('vk-group-widget').innerText = "Ошибка загрузки данных.";
+        console.error("VK API response error:", r);
       }
     });
   </script>
