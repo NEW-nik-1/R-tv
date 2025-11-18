@@ -13,7 +13,7 @@
 <style>
 body { background:#f3f4f6; font-family:sans-serif; margin:0; padding:0; }
 .flex-row { display:flex; gap:8px; padding:8px; max-width:100%; box-sizing:border-box; }
-#canvasContainer { flex:1; position:relative; display:flex; justify-content:center; align-items:center; background:#888; border-radius:10px; padding:4px; }
+#canvasContainer { flex:1; position:relative; display:flex; justify-content:center; align-items:center; background:#fff; border-radius:10px; padding:4px; }
 #canvasSizeLabel { position:absolute; top:4px; right:4px; font-size:12px; background:#000a; color:#fff; padding:2px 6px; border-radius:6px; }
 .toolbar { width:240px; padding:6px; background:#fff; border-radius:10px; font-size:12px; display:flex; flex-direction:column; gap:4px; max-height:95vh; overflow-y:auto; }
 .custom-button { display:block; width:100%; padding:6px; background:#155724; color:#fff; border-radius:10px; font-weight:700; text-align:center; cursor:pointer; font-size:12px; }
@@ -28,9 +28,11 @@ input, select { border-radius:6px; border:1px solid #155724; padding:3px 6px; wi
 #footer a { font-weight:bold; font-size:14px; color:#155724; text-decoration:none; }
 #helpBtn { width:24px; height:24px; border:none; border-radius:50%; background:#155724; color:#fff; font-weight:bold; cursor:pointer; }
 
-/* Шрифты */
+/* Пример подключение всех 39 шрифтов */
 @font-face { font-family: 'a_AlternaTitul3D'; src: url('fonts/a_AlternaTitul3D.ttf') format('truetype'); }
-/* ...вставьте остальные 38 шрифтов, как в предыдущем коде... */
+@font-face { font-family: 'a_FuturaRoundTtlCmDFr'; src: url('fonts/a_FuturaRoundTtlCmDFr.ttf') format('truetype'); }
+@font-face { font-family: 'a_GroticExtraBlack'; src: url('fonts/a_GroticExtraBlack.ttf') format('truetype'); }
+/* Остальные 36 шрифтов вставить аналогично */
 </style>
 </head>
 <body>
@@ -49,9 +51,9 @@ input, select { border-radius:6px; border:1px solid #155724; padding:3px 6px; wi
       <option value="a_AlternaTitul3D">a_AlternaTitul3D</option>
       <option value="a_FuturaRoundTtlCmDFr">a_FuturaRoundTtlCmDFr</option>
       <option value="a_GroticExtraBlack">a_GroticExtraBlack</option>
-      <!-- остальные шрифты... -->
+      <!-- остальные шрифты -->
     </select>
-    <input type="color" id="colorPicker" value="#ffffff">
+    <input type="color" id="colorPicker" value="#000000">
     <input type="number" id="fontSizeInput" value="28" min="8" max="400">
     <button id="toggleStrokeBtn" class="custom-button">Обводка Вкл/Выкл</button>
     <input type="color" id="strokeColorPicker" value="#000000">
@@ -94,20 +96,21 @@ input, select { border-radius:6px; border:1px solid #155724; padding:3px 6px; wi
 </div>
 
 <script>
-const canvas = new fabric.Canvas('canvas',{backgroundColor:'#888',preserveObjectStacking:true});
+const canvas = new fabric.Canvas('canvas',{backgroundColor:'#FFFFFF',preserveObjectStacking:true});
 let backgroundImage = null, finalResolution = "505x505", contextTarget = null;
 const canvasSizeLabel = document.getElementById('canvasSizeLabel');
 
-// Отображение границ области под фон
+// Неразрушаемая рамка placeholder
 function addPlaceholderRect(){
+  if(canvas.getObjects().some(o=>o.name==='placeholder')) return;
   const placeholder = new fabric.Rect({
     left: 10,
     top: 10,
     width: canvas.getWidth()-20,
     height: canvas.getHeight()-20,
-    fill: 'rgba(255,255,255,0.1)',
-    stroke: '#fff',
-    strokeWidth:2,
+    fill: 'rgba(0,0,0,0.05)',
+    stroke: '#888',
+    strokeWidth: 2,
     selectable: false,
     evented: false,
     hoverCursor: 'default',
@@ -118,7 +121,6 @@ function addPlaceholderRect(){
 }
 addPlaceholderRect();
 
-// Обновление подписи размера
 function updateCanvasLabel(w,h){ canvasSizeLabel.textContent=`${w} x ${h}`; }
 
 // Загрузка изображений
@@ -133,8 +135,6 @@ function loadImageFromInput(input,isBackground){
         backgroundImage=img;
         if(!canvas.getObjects().includes(img))canvas.add(img);
         canvas.sendToBack(img);
-        // удалить placeholder
-        canvas.getObjects().forEach(o=>{ if(o.name==='placeholder') canvas.remove(o); });
       } else {
         img.set({left:50,top:50,selectable:true,hasControls:true});
         canvas.add(img); canvas.setActiveObject(img);
@@ -147,7 +147,7 @@ function loadImageFromInput(input,isBackground){
 document.getElementById('imgLoader').addEventListener('change',e=>loadImageFromInput(e.target,true));
 document.getElementById('addImageLoader').addEventListener('change',e=>loadImageFromInput(e.target,false));
 
-// Добавление текста
+// Добавление текста с подгрузкой шрифта
 document.getElementById('addTextBtn').addEventListener('click',async ()=>{
   const txt=document.getElementById('textInput').value||'Текст';
   const font = document.getElementById('fontSelect').value;
@@ -182,14 +182,22 @@ function updateActiveText(){
 }
 ['fontSelect','colorPicker','fontSizeInput','strokeColorPicker'].forEach(id=>{ document.getElementById(id).addEventListener('input',updateActiveText); });
 
-// Обводка и тень
+// Обводка
 document.getElementById('toggleStrokeBtn').addEventListener('click',()=>{
   const obj=canvas.getActiveObject();
-  if(obj && obj.type==='textbox'){ obj.set({stroke: obj.stroke ? null : document.getElementById('strokeColorPicker').value, strokeWidth:1, strokeLineJoin:'round'}); canvas.requestRenderAll(); }
+  if(obj && obj.type==='textbox'){
+    obj.set({stroke: obj.stroke ? null : document.getElementById('strokeColorPicker').value, strokeWidth:1, strokeLineJoin:'round'});
+    canvas.requestRenderAll();
+  }
 });
+
+// Тень
 document.getElementById('toggleShadowBtn').addEventListener('click',()=>{
   const obj=canvas.getActiveObject();
-  if(obj && obj.type==='textbox'){ obj.set({shadow: obj.shadow ? null : new fabric.Shadow({color:'rgba(0,0,0,0.5)',blur:6,offsetX:3,offsetY:3})}); canvas.requestRenderAll(); }
+  if(obj && obj.type==='textbox'){
+    obj.set({shadow: obj.shadow ? null : new fabric.Shadow({color:'rgba(0,0,0,0.5)',blur:6,offsetX:3,offsetY:3})});
+    canvas.requestRenderAll();
+  }
 });
 
 // Тонкий пробел
@@ -197,8 +205,8 @@ document.getElementById('addSpaceBtn').addEventListener('click',()=>{
   const obj=canvas.getActiveObject();
   if(obj && obj.type==='textbox'){
     const thin='\u200A';
-    if(obj.text.includes(thin) && obj.originalText)obj.text=obj.originalText;
-    else {obj.originalText=obj.text; obj.text=obj.text.replace(/\s+/g,'').split('').join(thin);}
+    if(obj.text.includes(thin) && obj.originalText) obj.text=obj.originalText;
+    else { obj.originalText=obj.text; obj.text=obj.text.replace(/\s+/g,'').split('').join(thin);}
     canvas.requestRenderAll();
   }
 });
@@ -207,13 +215,16 @@ document.getElementById('addSpaceBtn').addEventListener('click',()=>{
 canvas.upperCanvasEl.addEventListener('contextmenu',e=>{
   e.preventDefault(); const pointer=canvas.getPointer(e); contextTarget=null;
   const objs=canvas.getObjects().slice().reverse();
-  for(let o of objs){ if(o.containsPoint && o.containsPoint(pointer)){ contextTarget=o; break; } }
+  for(let o of objs){ if(o.containsPoint && o.containsPoint(pointer) && o.name!=='placeholder'){ contextTarget=o; break; } }
   const menu=document.getElementById('contextMenu');
   if(contextTarget){ menu.style.left=e.pageX+'px'; menu.style.top=e.pageY+'px'; menu.style.display='block'; }
   else menu.style.display='none';
 });
 document.addEventListener('click',()=>{document.getElementById('contextMenu').style.display='none';});
-document.getElementById('copyBtn').addEventListener('click',()=>{if(!contextTarget)return; contextTarget.clone(clone=>{ clone.set({left:(contextTarget.left||0)+20, top:(contextTarget.top||0)+20, selectable:true, evented:true}); canvas.add(clone); canvas.setActiveObject(clone); canvas.requestRenderAll(); });});
+document.getElementById('copyBtn').addEventListener('click',()=>{
+  if(!contextTarget)return;
+  contextTarget.clone(clone=>{ clone.set({left:(contextTarget.left||0)+20, top:(contextTarget.top||0)+20, selectable:true, evented:true}); canvas.add(clone); canvas.setActiveObject(clone); canvas.requestRenderAll(); });
+});
 document.getElementById('deleteBtn').addEventListener('click',()=>{if(contextTarget)canvas.remove(contextTarget); canvas.requestRenderAll();});
 
 // Разрешение холста
@@ -222,7 +233,6 @@ document.getElementById('setResolutionBtn').addEventListener('click',()=>{
   const [newW,newH]=finalResolution.split('x').map(Number);
   canvas.setWidth(newW); canvas.setHeight(newH);
   if(backgroundImage){ const scale=Math.max(newW/backgroundImage._origW,newH/backgroundImage._origH); backgroundImage.set({scaleX:scale, scaleY:scale, left:0, top:0}); canvas.sendToBack(backgroundImage); }
-  addPlaceholderRect();
   canvas.requestRenderAll(); updateCanvasLabel(newW,newH);
 });
 
@@ -232,11 +242,12 @@ document.getElementById('downloadBtn').addEventListener('click',()=>{
   const dataURL=canvas.toDataURL({format:'png',width:w,height:h});
   const a=document.createElement('a'); a.href=dataURL; a.download='post.png'; a.click();
 });
-updateCanvasLabel(505,505);
 
 // Модальное окно
-document.getElementById('helpBtn').addEventListener('click',()=>{ document.getElementById('helpModal').style.display='flex'; });
-document.getElementById('closeHelp').addEventListener('click',()=>{ document.getElementById('helpModal').style.display='none'; });
+document.getElementById('helpBtn').addEventListener('click',()=>{document.getElementById('helpModal').style.display='flex';});
+document.getElementById('closeHelp').addEventListener('click',()=>{document.getElementById('helpModal').style.display='none';});
+
+updateCanvasLabel(505,505);
 </script>
 
 </body>
