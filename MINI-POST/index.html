@@ -28,11 +28,11 @@ input, select { border-radius:6px; border:1px solid #155724; padding:3px 6px; wi
 #footer a { font-weight:bold; font-size:14px; color:#155724; text-decoration:none; }
 #helpBtn { width:24px; height:24px; border:none; border-radius:50%; background:#155724; color:#fff; font-weight:bold; cursor:pointer; }
 
-/* Пример подключение всех 39 шрифтов */
+/* Пример подключение всех шрифтов */
 @font-face { font-family: 'a_AlternaTitul3D'; src: url('fonts/a_AlternaTitul3D.ttf') format('truetype'); }
 @font-face { font-family: 'a_FuturaRoundTtlCmDFr'; src: url('fonts/a_FuturaRoundTtlCmDFr.ttf') format('truetype'); }
 @font-face { font-family: 'a_GroticExtraBlack'; src: url('fonts/a_GroticExtraBlack.ttf') format('truetype'); }
-/* Остальные 36 шрифтов вставить аналогично */
+/* остальные шрифты */
 </style>
 </head>
 <body>
@@ -100,27 +100,6 @@ const canvas = new fabric.Canvas('canvas',{backgroundColor:'#FFFFFF',preserveObj
 let backgroundImage = null, finalResolution = "505x505", contextTarget = null;
 const canvasSizeLabel = document.getElementById('canvasSizeLabel');
 
-// Неразрушаемая рамка placeholder
-function addPlaceholderRect(){
-  if(canvas.getObjects().some(o=>o.name==='placeholder')) return;
-  const placeholder = new fabric.Rect({
-    left: 10,
-    top: 10,
-    width: canvas.getWidth()-20,
-    height: canvas.getHeight()-20,
-    fill: 'rgba(0,0,0,0.05)',
-    stroke: '#888',
-    strokeWidth: 2,
-    selectable: false,
-    evented: false,
-    hoverCursor: 'default',
-    name: 'placeholder'
-  });
-  canvas.add(placeholder);
-  canvas.sendToBack(placeholder);
-}
-addPlaceholderRect();
-
 function updateCanvasLabel(w,h){ canvasSizeLabel.textContent=`${w} x ${h}`; }
 
 // Загрузка изображений
@@ -147,7 +126,7 @@ function loadImageFromInput(input,isBackground){
 document.getElementById('imgLoader').addEventListener('change',e=>loadImageFromInput(e.target,true));
 document.getElementById('addImageLoader').addEventListener('change',e=>loadImageFromInput(e.target,false));
 
-// Добавление текста с подгрузкой шрифта
+// Добавление текста
 document.getElementById('addTextBtn').addEventListener('click',async ()=>{
   const txt=document.getElementById('textInput').value||'Текст';
   const font = document.getElementById('fontSelect').value;
@@ -215,7 +194,7 @@ document.getElementById('addSpaceBtn').addEventListener('click',()=>{
 canvas.upperCanvasEl.addEventListener('contextmenu',e=>{
   e.preventDefault(); const pointer=canvas.getPointer(e); contextTarget=null;
   const objs=canvas.getObjects().slice().reverse();
-  for(let o of objs){ if(o.containsPoint && o.containsPoint(pointer) && o.name!=='placeholder'){ contextTarget=o; break; } }
+  for(let o of objs){ if(o.containsPoint && o.containsPoint(pointer)){ contextTarget=o; break; } }
   const menu=document.getElementById('contextMenu');
   if(contextTarget){ menu.style.left=e.pageX+'px'; menu.style.top=e.pageY+'px'; menu.style.display='block'; }
   else menu.style.display='none';
