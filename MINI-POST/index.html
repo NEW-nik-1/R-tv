@@ -6,7 +6,21 @@
 <title>Редактор для соцсетей</title>
 <script src="https://cdn.jsdelivr.net/npm/fabric@5.2.4/dist/fabric.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<style>
+ 
+  <!-- VK Bridge -->
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+  <script>
+    // Инициализация VK Bridge для интеграции с VK Mini Apps
+    (async () => {
+      try {
+        await vkBridge.send('VKWebAppInit');
+      } catch (e) {
+        console.warn('VK Bridge initialization failed or unavailable', e);
+      }
+    })();
+  </script>
+
+  <style>
 body { background:#f3f4f6; font-family:sans-serif; margin:0; padding:0; }
 .flex-row { display:flex; gap:8px; padding:8px; max-width:100%; box-sizing:border-box; }
 #canvasContainer { flex:1; position:relative; display:flex; justify-content:center; align-items:center; background:#fff; border-radius:10px; padding:4px; }
