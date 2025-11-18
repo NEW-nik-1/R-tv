@@ -6,21 +6,11 @@
 <title>Редактор для соцсетей</title>
 <script src="https://cdn.jsdelivr.net/npm/fabric@5.2.4/dist/fabric.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
- 
-  <!-- VK Bridge -->
-  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
-  <script>
-    // Инициализация VK Bridge для интеграции с VK Mini Apps
-    (async () => {
-      try {
-        await vkBridge.send('VKWebAppInit');
-      } catch (e) {
-        console.warn('VK Bridge initialization failed or unavailable', e);
-      }
-    })();
-  </script>
-
-  <style>
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+(async () => { try { await vkBridge.send('VKWebAppInit'); } catch(e){ console.warn('VK Bridge init failed', e); } })();
+</script>
+<style>
 body { background:#f3f4f6; font-family:sans-serif; margin:0; padding:0; }
 .flex-row { display:flex; gap:8px; padding:8px; max-width:100%; box-sizing:border-box; }
 #canvasContainer { flex:1; position:relative; display:flex; justify-content:center; align-items:center; background:#fff; border-radius:10px; padding:4px; }
@@ -29,12 +19,15 @@ body { background:#f3f4f6; font-family:sans-serif; margin:0; padding:0; }
 .custom-button { display:block; width:100%; padding:6px; background:#155724; color:#fff; border-radius:10px; font-weight:700; text-align:center; cursor:pointer; font-size:12px; }
 .custom-button:hover { transform:translateY(-1px); }
 input, select { border-radius:6px; border:1px solid #155724; padding:3px 6px; width:100%; font-size:12px; }
-/* Контекстное меню */
 #contextMenu { position:absolute; background:#fff; border:1px solid #ccc; border-radius:6px; display:none; z-index:2000; padding:4px 0; font-size:12px; }
 #contextMenu button{ display:block; width:100%; padding:4px 10px; border:none; background:none; text-align:left; cursor:pointer; }
 #contextMenu button:hover{ background:#e2f0e2; }
 
-/* Подключение всех 39 шрифтов */
+/* Модальное окно */
+#helpModal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000; }
+#helpModalContent { background:#fff; padding:20px; border-radius:10px; max-width:600px; width:90%; position:relative; font-size:14px; color:#000; }
+
+/* Подключение шрифтов */
 @font-face { font-family: 'a_AlternaTitul3D'; src: url('fonts/a_AlternaTitul3D.ttf') format('truetype'); }
 @font-face { font-family: 'a_FuturaRoundTtlCmDFr'; src: url('fonts/a_FuturaRoundTtlCmDFr.ttf') format('truetype'); }
 @font-face { font-family: 'a_GroticExtraBlack'; src: url('fonts/a_GroticExtraBlack.ttf') format('truetype'); }
@@ -151,35 +144,48 @@ input, select { border-radius:6px; border:1px solid #155724; padding:3px 6px; wi
   <button id="deleteBtn">Удалить</button>
 </div>
 
+<!-- Автор и кнопка справки -->
+<div style="position:fixed; bottom:10px; left:10px; display:flex; align-items:center; gap:10px; z-index:1000;">
+  <span style="font-weight:bold; font-size:14px; color:#155724;">Автор: Ваше имя</span>
+  <button id="helpBtn" style="width:24px; height:24px; border:none; border-radius:50%; background:#155724; color:#fff; font-weight:bold; cursor:pointer;">?</button>
+</div>
+
+<!-- Модальное окно справки -->
+<div id="helpModal">
+  <div id="helpModalContent">
+    <button id="closeHelp" style="position:absolute; top:10px; right:10px; border:none; background:none; font-size:18px; font-weight:bold; cursor:pointer;">x</button>
+    <h2 style="margin-top:0; color:#155724;">Инструкция по редактору</h2>
+    <p><strong>Загрузить фон:</strong> Выбирает изображение в качестве фона.</p>
+    <p><strong>Добавить картинку:</strong> Добавляет отдельное изображение на холст.</p>
+    <p><strong>Текст:</strong> Вводите текст, выбираете шрифт, размер и цвет, затем нажимаете "Добавить текст".</p>
+    <p><strong>Обводка и тень:</strong> Включает или выключает эффект вокруг текста.</p>
+    <p><strong>Тонкий пробел:</strong> Делает текст более "воздушным".</p>
+    <p><strong>Разрешение холста:</strong> Изменяет размер холста и масштаб фона.</p>
+    <p><strong>Скачать:</strong> Сохраняет итоговое изображение на устройство.</p>
+  </div>
+</div>
+
 <script>
+// Canvas
 const canvas = new fabric.Canvas('canvas',{backgroundColor:'#fff',preserveObjectStacking:true});
 let backgroundImage = null, finalResolution = "505x505", contextTarget = null;
 const canvasSizeLabel = document.getElementById('canvasSizeLabel');
-
 function updateCanvasLabel(w,h){ canvasSizeLabel.textContent=`${w} x ${h}`; }
 
-// Загрузка картинок
+// Загрузка изображений
 function loadImageFromInput(input,isBackground){
   const file=input.files[0]; if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
     fabric.Image.fromURL(e.target.result,img=>{
       img._origW=img.width; img._origH=img.height; img.set({originX:'left',originY:'top'});
-      if(isBackground){
-        img.set({left:0,top:0,selectable:true,evented:true});
-        backgroundImage=img;
-        if(!canvas.getObjects().includes(img))canvas.add(img);
-        canvas.sendToBack(img);
-      } else {
-        img.set({left:50,top:50,selectable:true,hasControls:true});
-        canvas.add(img); canvas.setActiveObject(img);
-      }
+      if(isBackground){ img.set({left:0,top:0,selectable:true,evented:true}); backgroundImage=img; if(!canvas.getObjects().includes(img))canvas.add(img); canvas.sendToBack(img); }
+      else { img.set({left:50,top:50,selectable:true,hasControls:true}); canvas.add(img); canvas.setActiveObject(img); }
       input.value=''; canvas.requestRenderAll();
     });
   };
   reader.readAsDataURL(file);
 }
-
 document.getElementById('imgLoader').addEventListener('change',e=>loadImageFromInput(e.target,true));
 document.getElementById('addImageLoader').addEventListener('change',e=>loadImageFromInput(e.target,false));
 
@@ -239,11 +245,8 @@ canvas.upperCanvasEl.addEventListener('contextmenu',e=>{
   else menu.style.display='none';
 });
 document.addEventListener('click',()=>{document.getElementById('contextMenu').style.display='none';});
-document.getElementById('copyBtn').addEventListener('click',()=>{
-  if(!contextTarget)return;
-  contextTarget.clone(clone=>{ clone.set({left:(contextTarget.left||0)+20, top:(contextTarget.top||0)+20, selectable:true, evented:true}); canvas.add(clone); canvas.setActiveObject(clone); canvas.requestRenderAll(); });
-});
-document.getElementById('deleteBtn').addEventListener('click',()=>{if(contextTarget)canvas.remove(contextTarget); canvas.requestRenderAll();});
+document.getElementById('copyBtn').addEventListener('click',()=>{ if(!contextTarget)return; contextTarget.clone(clone=>{ clone.set({left:(contextTarget.left||0)+20, top:(contextTarget.top||0)+20, selectable:true, evented:true}); canvas.add(clone); canvas.setActiveObject(clone); canvas.requestRenderAll(); }); });
+document.getElementById('deleteBtn').addEventListener('click',()=>{ if(contextTarget)canvas.remove(contextTarget); canvas.requestRenderAll(); });
 
 // Разрешение холста
 document.getElementById('setResolutionBtn').addEventListener('click',()=>{
@@ -262,6 +265,14 @@ document.getElementById('downloadBtn').addEventListener('click',()=>{
 });
 
 updateCanvasLabel(505,505);
+
+// Модальное окно справки
+const helpBtn = document.getElementById('helpBtn');
+const helpModal = document.getElementById('helpModal');
+const closeHelp = document.getElementById('closeHelp');
+helpBtn.addEventListener('click', () => { helpModal.style.display = 'flex'; });
+closeHelp.addEventListener('click', () => { helpModal.style.display = 'none'; });
+helpModal.addEventListener('click', e => { if(e.target === helpModal) helpModal.style.display = 'none'; });
 </script>
 
 </body>
