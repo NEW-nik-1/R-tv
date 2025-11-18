@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Редактор для соцсетей</title>
+<script src="https://cdn.jsdelivr.net/npm/fabric@5.2.4/dist/fabric.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body { background:#f3f4f6; font-family:sans-serif; margin:0; padding:0; }
+.flex-row { display:flex; gap:8px; padding:8px; max-width:100%; box-sizing:border-box; }
+#canvasContainer { flex:1; position:relative; display:flex; justify-content:center; align-items:center; background:#fff; border-radius:10px; padding:4px; }
+#canvasSizeLabel { position:absolute; top:4px; right:4px; font-size:12px; background:#000a; color:#fff; padding:2px 6px; border-radius:6px; }
+.toolbar { width:240px; padding:6px; background:#fff; border-radius:10px; font-size:12px; display:flex; flex-direction:column; gap:4px; max-height:95vh; overflow-y:auto; }
+.custom-button { display:block; width:100%; padding:6px; background:#155724; color:#fff; border-radius:10px; font-weight:700; text-align:center; cursor:pointer; font-size:12px; }
+.custom-button:hover { transform:translateY(-1px); }
+input, select { border-radius:6px; border:1px solid #155724; padding:3px 6px; width:100%; font-size:12px; }
+/* Контекстное меню */
+#contextMenu { position:absolute; background:#fff; border:1px solid #ccc; border-radius:6px; display:none; z-index:2000; padding:4px 0; font-size:12px; }
+#contextMenu button{ display:block; width:100%; padding:4px 10px; border:none; background:none; text-align:left; cursor:pointer; }
+#contextMenu button:hover{ background:#e2f0e2; }
+
+/* Подключение всех 39 шрифтов */
+@font-face { font-family: 'a_AlternaTitul3D'; src: url('fonts/a_AlternaTitul3D.ttf') format('truetype'); }
+@font-face { font-family: 'a_FuturaRoundTtlCmDFr'; src: url('fonts/a_FuturaRoundTtlCmDFr.ttf') format('truetype'); }
+@font-face { font-family: 'a_GroticExtraBlack'; src: url('fonts/a_GroticExtraBlack.ttf') format('truetype'); }
+@font-face { font-family: 'a_MachinaOrtoDgStr'; src: url('fonts/a_MachinaOrtoDgStr.ttf') format('truetype'); }
+@font-face { font-family: 'Adventure Indiana'; src: url('fonts/Adventure Indiana.ttf') format('truetype'); }
+@font-face { font-family: 'Airfool'; src: url('fonts/Airfool.ttf') format('truetype'); }
+@font-face { font-family: 'Arounder'; src: url('fonts/Arounder.ttf') format('truetype'); }
+@font-face { font-family: 'BeSkid'; src: url('fonts/BeSkid.ttf') format('truetype'); }
+@font-face { font-family: 'Bubblez Graffiti'; src: url('fonts/Bubblez Graffiti.ttf') format('truetype'); }
+@font-face { font-family: 'Campus Grav'; src: url('fonts/Campus Grav.ttf') format('truetype'); }
+@font-face { font-family: 'Capture it'; src: url('fonts/Capture it.ttf') format('truetype'); }
+@font-face { font-family: 'Chicoree'; src: url('fonts/Chicoree.ttf') format('truetype'); }
+@font-face { font-family: 'Cliche'; src: url('fonts/Cliche.ttf') format('truetype'); }
+@font-face { font-family: 'Creepster'; src: url('fonts/Creepster.ttf') format('truetype'); }
+@font-face { font-family: 'Damn noisy kids'; src: url('fonts/Damn noisy kids.ttf') format('truetype'); }
+@font-face { font-family: 'Docker'; src: url('fonts/Docker.ttf') format('truetype'); }
+@font-face { font-family: 'DS Eraser2'; src: url('fonts/DS Eraser2.ttf') format('truetype'); }
+@font-face { font-family: 'DynarShadow'; src: url('fonts/DynarShadow.ttf') format('truetype'); }
+@font-face { font-family: 'FitaSlavia'; src: url('fonts/FitaSlavia.ttf') format('truetype'); }
+@font-face { font-family: 'FrankC'; src: url('fonts/FrankC.ttf') format('truetype'); }
+@font-face { font-family: 'Gagalin'; src: url('fonts/Gagalin.ttf') format('truetype'); }
+@font-face { font-family: 'Gothland'; src: url('fonts/Gothland.ttf') format('truetype'); }
+@font-face { font-family: 'Maki Sans'; src: url('fonts/Maki Sans.ttf') format('truetype'); }
+@font-face { font-family: 'Murs Gothic Wide'; src: url('fonts/Murs Gothic Wide.ttf') format('truetype'); }
+@font-face { font-family: 'Pastry Chef'; src: url('fonts/Pastry Chef.ttf') format('truetype'); }
+@font-face { font-family: 'Pershotravneva55'; src: url('fonts/Pershotravneva55.ttf') format('truetype'); }
+@font-face { font-family: 'PF Stamps Pro Flex'; src: url('fonts/PF Stamps Pro Flex.ttf') format('truetype'); }
+@font-face { font-family: 'Ramona'; src: url('fonts/Ramona.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto'; src: url('fonts/Roboto.ttf') format('truetype'); }
+@font-face { font-family: 'Rostov'; src: url('fonts/Rostov.ttf') format('truetype'); }
+@font-face { font-family: 'Ruthless Sketch'; src: url('fonts/Ruthless Sketch.ttf') format('truetype'); }
+@font-face { font-family: 'Serati'; src: url('fonts/Serati.ttf') format('truetype'); }
+@font-face { font-family: 'Tagesschrift'; src: url('fonts/Tagesschrift.ttf') format('truetype'); }
+@font-face { font-family: 'Tangak'; src: url('fonts/Tangak.ttf') format('truetype'); }
+@font-face { font-family: 'Ura Bum Bum SP'; src: url('fonts/Ura Bum Bum SP.ttf') format('truetype'); }
+@font-face { font-family: 'Ustroke'; src: url('fonts/Ustroke.ttf') format('truetype'); }
+@font-face { font-family: 'Xanthus'; src: url('fonts/Xanthus.ttf') format('truetype'); }
+@font-face { font-family: 'Zeitmax'; src: url('fonts/Zeitmax.ttf') format('truetype'); }
+@font-face { font-family: 'Zing Rust'; src: url('fonts/Zing Rust.ttf') format('truetype'); }
+</style>
+</head>
+<body>
+
+<div class="flex-row">
+  <div id="canvasContainer">
+    <canvas id="canvas" width="505" height="505"></canvas>
+    <div id="canvasSizeLabel">505 x 505</div>
+  </div>
+
+  <div class="toolbar">
+    <label class="custom-button">Загрузить фон<input type="file" id="imgLoader" accept="image/*" style="display:none;"></label>
+    <label class="custom-button">Добавить картинку<input type="file" id="addImageLoader" accept="image/*" style="display:none;"></label>
+    <input type="text" id="textInput" placeholder="Текст">
+    <select id="fontSelect">
+      <option value="a_AlternaTitul3D">a_AlternaTitul3D</option>
+      <option value="a_FuturaRoundTtlCmDFr">a_FuturaRoundTtlCmDFr</option>
+      <option value="a_GroticExtraBlack">a_GroticExtraBlack</option>
+      <option value="a_MachinaOrtoDgStr">a_MachinaOrtoDgStr</option>
+      <option value="Adventure Indiana">Adventure Indiana</option>
+      <option value="Airfool">Airfool</option>
+      <option value="Arounder">Arounder</option>
+      <option value="BeSkid">BeSkid</option>
+      <option value="Bubblez Graffiti">Bubblez Graffiti</option>
+      <option value="Campus Grav">Campus Grav</option>
+      <option value="Capture it">Capture it</option>
+      <option value="Chicoree">Chicoree</option>
+      <option value="Cliche">Cliche</option>
+      <option value="Creepster">Creepster</option>
+      <option value="Damn noisy kids">Damn noisy kids</option>
+      <option value="Docker">Docker</option>
+      <option value="DS Eraser2">DS Eraser2</option>
+      <option value="DynarShadow">DynarShadow</option>
+      <option value="FitaSlavia">FitaSlavia</option>
+      <option value="FrankC">FrankC</option>
+      <option value="Gagalin">Gagalin</option>
+      <option value="Gothland">Gothland</option>
+      <option value="Maki Sans">Maki Sans</option>
+      <option value="Murs Gothic Wide">Murs Gothic Wide</option>
+      <option value="Pastry Chef">Pastry Chef</option>
+      <option value="Pershotravneva55">Pershotravneva55</option>
+      <option value="PF Stamps Pro Flex">PF Stamps Pro Flex</option>
+      <option value="Ramona">Ramona</option>
+      <option value="Roboto">Roboto</option>
+      <option value="Rostov">Rostov</option>
+      <option value="Ruthless Sketch">Ruthless Sketch</option>
+      <option value="Serati">Serati</option>
+      <option value="Tagesschrift">Tagesschrift</option>
+      <option value="Tangak">Tangak</option>
+      <option value="Ura Bum Bum SP">Ura Bum Bum SP</option>
+      <option value="Ustroke">Ustroke</option>
+      <option value="Xanthus">Xanthus</option>
+      <option value="Zeitmax">Zeitmax</option>
+      <option value="Zing Rust">Zing Rust</option>
+    </select>
+    <input type="color" id="colorPicker" value="#ffffff">
+    <input type="number" id="fontSizeInput" value="28" min="8" max="400">
+    <button id="toggleStrokeBtn" class="custom-button">Обводка Вкл/Выкл</button>
+    <input type="color" id="strokeColorPicker" value="#000000">
+    <button id="toggleShadowBtn" class="custom-button">Тень Вкл/Выкл</button>
+    <select id="resolutionSelect">
+      <option value="511x535">511 x 535</option>
+      <option value="548x428">548 x 428</option>
+      <option value="505x505">505 x 505</option>
+    </select>
+    <button id="setResolutionBtn" class="custom-button">Применить</button>
+    <button id="addTextBtn" class="custom-button">Добавить текст</button>
+    <button id="addSpaceBtn" class="custom-button">Тонкий пробел</button>
+    <button id="downloadBtn" class="custom-button">Скачать</button>
+  </div>
+</div>
+
+<div id="contextMenu">
+  <button id="copyBtn">Копировать</button>
+  <button id="deleteBtn">Удалить</button>
+</div>
+
+<script>
+const canvas = new fabric.Canvas('canvas',{backgroundColor:'#fff',preserveObjectStacking:true});
+let backgroundImage = null, finalResolution = "505x505", contextTarget = null;
+const canvasSizeLabel = document.getElementById('canvasSizeLabel');
+
+function updateCanvasLabel(w,h){ canvasSizeLabel.textContent=`${w} x ${h}`; }
+
+// Загрузка картинок
+function loadImageFromInput(input,isBackground){
+  const file=input.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    fabric.Image.fromURL(e.target.result,img=>{
+      img._origW=img.width; img._origH=img.height; img.set({originX:'left',originY:'top'});
+      if(isBackground){
+        img.set({left:0,top:0,selectable:true,evented:true});
+        backgroundImage=img;
+        if(!canvas.getObjects().includes(img))canvas.add(img);
+        canvas.sendToBack(img);
+      } else {
+        img.set({left:50,top:50,selectable:true,hasControls:true});
+        canvas.add(img); canvas.setActiveObject(img);
+      }
+      input.value=''; canvas.requestRenderAll();
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('imgLoader').addEventListener('change',e=>loadImageFromInput(e.target,true));
+document.getElementById('addImageLoader').addEventListener('change',e=>loadImageFromInput(e.target,false));
+
+// Добавление текста
+document.getElementById('addTextBtn').addEventListener('click',()=>{
+  const txt=document.getElementById('textInput').value||'Текст';
+  const tb=new fabric.Textbox(txt,{
+    left:20, top:20,
+    fill:document.getElementById('colorPicker').value,
+    fontSize:parseInt(document.getElementById('fontSizeInput').value),
+    fontFamily:document.getElementById('fontSelect').value,
+    originalText:txt,
+    stroke:null, strokeWidth:1, strokeLineJoin:'round',
+    selectable:true
+  });
+  canvas.add(tb); canvas.setActiveObject(tb); canvas.requestRenderAll();
+});
+
+// Настройки текста
+function updateActiveText(){
+  const obj=canvas.getActiveObject();
+  if(obj && obj.type==='textbox'){
+    obj.set({
+      fontFamily:document.getElementById('fontSelect').value,
+      fill:document.getElementById('colorPicker').value,
+      fontSize:parseInt(document.getElementById('fontSizeInput').value),
+      stroke: obj.stroke ? document.getElementById('strokeColorPicker').value : null
+    });
+    canvas.requestRenderAll();
+  }
+}
+['fontSelect','colorPicker','fontSizeInput','strokeColorPicker'].forEach(id=>{ document.getElementById(id).addEventListener('input',updateActiveText); });
+
+// Обводка и тень
+document.getElementById('toggleStrokeBtn').addEventListener('click',()=>{
+  const obj=canvas.getActiveObject();
+  if(obj && obj.type==='textbox'){ obj.set({stroke: obj.stroke ? null : document.getElementById('strokeColorPicker').value, strokeWidth:1, strokeLineJoin:'round'}); canvas.requestRenderAll(); }
+});
+document.getElementById('toggleShadowBtn').addEventListener('click',()=>{
+  const obj=canvas.getActiveObject();
+  if(obj && obj.type==='textbox'){ obj.set({shadow: obj.shadow ? null : new fabric.Shadow({color:'rgba(0,0,0,0.5)',blur:6,offsetX:3,offsetY:3})}); canvas.requestRenderAll(); }
+});
+
+// Тонкий пробел
+document.getElementById('addSpaceBtn').addEventListener('click',()=>{
+  const obj=canvas.getActiveObject();
+  if(obj && obj.type==='textbox'){ const thin='\u200A'; if(obj.text.includes(thin) && obj.originalText)obj.text=obj.originalText; else {obj.originalText=obj.text; obj.text=obj.text.replace(/\s+/g,'').split('').join(thin);} canvas.requestRenderAll(); }
+});
+
+// Контекстное меню
+canvas.upperCanvasEl.addEventListener('contextmenu',e=>{
+  e.preventDefault(); const pointer=canvas.getPointer(e); contextTarget=null;
+  const objs=canvas.getObjects().slice().reverse();
+  for(let o of objs){ if(o.containsPoint && o.containsPoint(pointer)){ contextTarget=o; break; } }
+  const menu=document.getElementById('contextMenu');
+  if(contextTarget){ menu.style.left=e.pageX+'px'; menu.style.top=e.pageY+'px'; menu.style.display='block'; }
+  else menu.style.display='none';
+});
+document.addEventListener('click',()=>{document.getElementById('contextMenu').style.display='none';});
+document.getElementById('copyBtn').addEventListener('click',()=>{
+  if(!contextTarget)return;
+  contextTarget.clone(clone=>{ clone.set({left:(contextTarget.left||0)+20, top:(contextTarget.top||0)+20, selectable:true, evented:true}); canvas.add(clone); canvas.setActiveObject(clone); canvas.requestRenderAll(); });
+});
+document.getElementById('deleteBtn').addEventListener('click',()=>{if(contextTarget)canvas.remove(contextTarget); canvas.requestRenderAll();});
+
+// Разрешение холста
+document.getElementById('setResolutionBtn').addEventListener('click',()=>{
+  finalResolution=document.getElementById('resolutionSelect').value;
+  const [newW,newH]=finalResolution.split('x').map(Number);
+  canvas.setWidth(newW); canvas.setHeight(newH);
+  if(backgroundImage){ const scale=Math.max(newW/backgroundImage._origW,newH/backgroundImage._origH); backgroundImage.set({scaleX:scale, scaleY:scale, left:0, top:0}); canvas.sendToBack(backgroundImage); }
+  canvas.requestRenderAll(); updateCanvasLabel(newW,newH);
+});
+
+// Скачать
+document.getElementById('downloadBtn').addEventListener('click',()=>{
+  const [w,h]=finalResolution.split('x').map(Number);
+  const dataURL=canvas.toDataURL({format:'png',width:w,height:h});
+  const a=document.createElement('a'); a.href=dataURL; a.download='post.png'; a.click();
+});
+
+updateCanvasLabel(505,505);
+</script>
+
+</body>
+</html>
