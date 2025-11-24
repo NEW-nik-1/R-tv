@@ -279,7 +279,7 @@ let visualizerColors = [
 let currentColorIndex = 0;
 
 window.addEventListener('DOMContentLoaded', () => {
-  // При первой загрузке устанавливаем картинку колонок из файла рядом с html
+  // Установить картинку колонок по умолчанию при загрузке
   const defaultImage = '5554.png';
   leftSpeaker.style.backgroundImage = `url(${defaultImage})`;
   rightSpeaker.style.backgroundImage = `url(${defaultImage})`;
@@ -458,6 +458,16 @@ imageInput.addEventListener('change', (e) => {
   rightSpeaker.style.backgroundImage = `url(${url})`;
   imageInput.value = '';
 });
+
+// Инициализация VK Bridge
+(async () => { 
+  try { 
+    await vkBridge.send('VKWebAppInit'); 
+    console.log('VK Bridge initialized'); 
+  } catch(e){ 
+    console.warn('VK Bridge init failed', e); 
+  } 
+})();
 </script>
 </body>
 </html>
