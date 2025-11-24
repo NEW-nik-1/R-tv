@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Музыкальный плеер с визуализатором и видео</title>
+<style>
+body {
+  margin: 0;
+  background: #111;
+  font-family: Arial, sans-serif;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  gap: 20px;
+}
+#currentTrack {
+  font-size: 24px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 2px solid rgba(255,255,255,0.08);
+  width: 400px;
+}
+@keyframes typing {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+#currentTrack.animated {
+  animation: typing 4s steps(40) infinite alternate;
+}
+
+.container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  max-width: 1000px;
+  box-sizing: border-box;
+}
+
+.speaker {
+  position: relative;
+  width: 300px;
+  height: 500px;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.9);
+  overflow: hidden;
+  border-radius: 15px;
+}
+.visualizer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.controls { display:flex; gap:4px; flex-wrap: wrap; align-items: center;}
+.btn {
+  background:#333;
+  border:1px solid rgba(255,255,255,0.04);
+  padding:4px 8px;
+  border-radius:8px;
+  color:#fff;
+  cursor:pointer;
+  font-size: 18px;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.btn:hover {
+  background:#555;
+}
+
+input[type="range"]{
+  width:140px;
+}
+
+ul {
+  list-style:none;
+  padding:0;
+  margin:0;
+  overflow-y:auto;
+  overflow-x: hidden;
+  max-height:260px;
+  width: 320px;
+}
+
+.playlist::-webkit-scrollbar {
+  width: 8px;
+}
+.playlist::-webkit-scrollbar-track {
+  background: #333;
+  border-radius: 10px;
+}
+.playlist::-webkit-scrollbar-thumb {
+  background: #66bb6a;
+  border-radius: 10px;
+}
+.playlist::-webkit-scrollbar-thumb:hover {
+  background: #81c784;
+}
+
+li {
+  padding:8px;
+  border-radius:6px;
+  margin:6px 0;
+  display:flex;
+  justify-content:flex-start;
+  align-items:center;
+  cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+li.active {
+  background: rgba(255,255,255,0.1);
+}
+li span.track-number {
+  width: 24px;
+  flex-shrink: 0;
+  text-align: right;
+  margin-right: 8px;
+}
+
+label.muted {
+  display: none;
+}
+
+.muted {
+  color: #999;
+  font-size:12px;
+}
+.hidden {
+  display: none;
+}
+
+.playlist {
+  max-width: 320px;
+  background: #222;
+  border-radius: 10px;
+  padding: 10px;
+  box-sizing: border-box;
+  visibility: visible;
+  width: 320px;
+  transition: visibility 0.3s ease;
+}
+
+.video-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  background: #000;
+  padding: 15px;
+  border-radius: 12px;
+  display: none;
+  box-shadow: 0 0 20px rgba(0,0,0,0.8);
+  max-width: 480px;
+  width: 100%;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  aspect-ratio: 16 / 9;
+}
+
+.video-container video {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+</style>
+</head>
+<body>
+
+<div id="currentTrack" title="Текущий воспроизводимый трек">— трек не играет —</div>
+
+<div class="container">
+
+  <div class="speaker" title="Левая колонка с визуализацией">
+    <canvas id="canvasLeft" class="visualizer"></canvas>
+  </div>
+
+  <div class="playlist" title="Плейлист с треками">
+    <div class="controls">
+      <input type="file" id="fileInput" accept="audio/*" multiple style="display:none" />
+      <input type="file" id="imageInput" accept=".png" style="display:none" />
+      
+      <button class="btn" id="addBtn" title="Добавить треки">+</button>
+      <button class="btn" id="clearPlaylistBtn" title="Очистить плейлист">×</button>
+      <button class="btn" id="changeVisualizerColorBtn" title="Изменить цвет визуализации">🎨</button>
+      
+      <button class="btn" id="togglePlaylistBtn" title="Скрыть плейлист">🗂</button>
+      <button class="btn" id="playPause" title="Воспроизвести/Пауза">▶️</button>
+      
+      <input id="volume" type="range" min="0" max="1" step="0.01" value="0.5" title="Регулятор громкости" />
+      <button class="btn" id="changeBoth" title="Изменить колонки">🔊</button>
+    </div>
+    <ul id="list" title="Список треков"></ul>
+    <div class="muted" title="Инструкция для плейлиста">Клик — воспроизвести, правый клик — удалить.</div>
+    <audio id="audio"></audio>
+  </div>
+
+  <div class="video-container" id="videoContainer" title="Видео плеер">
+    <video id="video" controls loop title="Видео для плеера"></video>
+    <div class="controls">
+      <input type="file" id="videoInput" accept=".mp4,.wmv,.avi,.flv,.mkv,.webm" style="display:none" />
+      <button class="btn" id="addVideoBtn" title="Загрузить видео">＋</button>
+      <button class="btn" id="showPlaylistBtn" title="Открыть плейлист">📂</button>
+    </div>
+  </div>
+
+  <div class="speaker" title="Правая колонка с визуализацией">
+    <canvas id="canvasRight" class="visualizer"></canvas>
+  </div>
+
+</div>
+
+<script>
+let playlist = [];
+let current = -1;
+const audio = document.getElementById('audio');
+const listEl = document.getElementById('list');
+const trackNameEl = document.getElementById('currentTrack');
+const fileInput = document.getElementById('fileInput');
+const addBtn = document.getElementById('addBtn');
+const clearPlaylistBtn = document.getElementById('clearPlaylistBtn');
+const changeVisualizerColorBtn = document.getElementById('changeVisualizerColorBtn');
+const playPauseBtn = document.getElementById('playPause');
+const volumeEl = document.getElementById('volume');
+const togglePlaylistBtn = document.getElementById('togglePlaylistBtn');
+const playlistEl = document.querySelector('.playlist');
+const videoContainer = document.getElementById('videoContainer');
+const video = document.getElementById('video');
+const videoInput = document.getElementById('videoInput');
+const addVideoBtn = document.getElementById('addVideoBtn');
+const showPlaylistBtn = document.getElementById('showPlaylistBtn');
+
+const imageInput = document.getElementById('imageInput');
+const changeBothBtn = document.getElementById('changeBoth');
+const leftSpeaker = document.querySelectorAll('.speaker')[0];
+const rightSpeaker = document.querySelectorAll('.speaker')[1];
+
+let audioCtx = null;
+let analyser = null;
+let dataArray = null;
+let canvasLeft = document.getElementById('canvasLeft');
+let canvasRight = document.getElementById('canvasRight');
+let ctxLeft = canvasLeft.getContext('2d');
+let ctxRight = canvasRight.getContext('2d');
+
+let visualizerColors = [
+  'rgba(29,185,84,0.7)', 'rgba(255, 99, 71,0.7)', 'rgba(30,144,255,0.7)', 'rgba(255,215,0,0.7)', 'rgba(138,43,226,0.7)',
+  'rgba(60,179,113,0.7)', 'rgba(255,69,0,0.7)', 'rgba(0,191,255,0.7)', 'rgba(255,140,0,0.7)', 'rgba(148,0,211,0.7)',
+  'rgba(34,139,34,0.7)', 'rgba(255,20,147,0.7)', 'rgba(70,130,180,0.7)', 'rgba(255,215,0,0.7)', 'rgba(123,104,238,0.7)',
+  'rgba(50,205,50,0.7)', 'rgba(255,127,80,0.7)', 'rgba(65,105,225,0.7)', 'rgba(240,230,140,0.7)', 'rgba(147,112,219,0.7)',
+  'rgba(46,139,87,0.7)', 'rgba(255,69,0,0.7)', 'rgba(30,144,255,0.7)', 'rgba(255,215,0,0.7)', 'rgba(186,85,211,0.7)',
+  'rgba(139,0,0,0.7)', 'rgba(0,100,0,0.7)', 'rgba(0,0,139,0.7)', 'rgba(255,140,0,0.7)', 'rgba(255,20,147,0.7)',
+  'rgba(32,178,170,0.7)', 'rgba(255,105,180,0.7)', 'rgba(106,90,205,0.7)', 'rgba(0,255,127,0.7)', 'rgba(255,69,0,0.7)',
+  'rgba(100,149,237,0.7)', 'rgba(218,112,214,0.7)', 'rgba(127,255,212,0.7)', 'rgba(255,165,0,0.7)', 'rgba(199,21,133,0.7)',
+  'rgba(0,206,209,0.7)', 'rgba(255,99,71,0.7)', 'rgba(0,128,128,0.7)', 'rgba(255,20,147,0.7)', 'rgba(123,104,238,0.7)'
+];
+let currentColorIndex = 0;
+
+window.addEventListener('DOMContentLoaded', () => {
+  // При первой загрузке устанавливаем картинку колонок из файла рядом с html
+  const defaultImage = '5554.png';
+  leftSpeaker.style.backgroundImage = `url(${defaultImage})`;
+  rightSpeaker.style.backgroundImage = `url(${defaultImage})`;
+});
+
+function renderList(){
+  listEl.innerHTML = '';
+  playlist.forEach((t,i)=>{
+    const li = document.createElement('li');
+    const numberSpan = document.createElement('span');
+    numberSpan.textContent = (i + 1) + '. ';
+    numberSpan.className = 'track-number';
+    li.appendChild(numberSpan);
+    li.appendChild(document.createTextNode(t.name.replace(/\.[^.]+$/,'')));
+    if (i===current) {
+      li.classList.add('active');
+      numberSpan.classList.add('animated');
+    } else {
+      li.classList.remove('active');
+      numberSpan.classList.remove('animated');
+    }
+    li.addEventListener('click', ()=>playTrack(i));
+    li.addEventListener('contextmenu', (e)=>{
+      e.preventDefault();
+      playlist.splice(i,1);
+      if (i===current){ 
+        audio.pause(); 
+        current=-1; 
+        trackNameEl.textContent='— трек не играет —'; 
+      }
+      renderList();
+    });
+    listEl.appendChild(li);
+  });
+}
+
+addBtn.addEventListener('click', ()=>fileInput.click());
+fileInput.addEventListener('change',(e)=>{
+  const files = e.target.files;
+  for(let f of files){
+    const url = URL.createObjectURL(f);
+    playlist.push({name:f.name,url});
+  }
+  renderList();
+  fileInput.value='';
+});
+
+clearPlaylistBtn.addEventListener('click', () => {
+  playlist = [];
+  current = -1;
+  audio.pause();
+  audio.src = '';
+  trackNameEl.textContent = '— трек не играет —';
+  renderList();
+});
+
+changeVisualizerColorBtn.addEventListener('click', () => {
+  currentColorIndex = (currentColorIndex + 1) % visualizerColors.length;
+});
+
+playPauseBtn.addEventListener('click', () => {
+  if (audio.paused) {
+    if (current === -1 && playlist.length > 0) playTrack(0);
+    else audio.play();
+    playPauseBtn.textContent = '⏸';
+  } else {
+    audio.pause();
+    playPauseBtn.textContent = '▶️';
+  }
+});
+
+volumeEl.value = 0.5; // громкость 50% при загрузке
+audio.volume = 0.5;
+
+volumeEl.addEventListener('input', ()=>{ 
+  audio.volume = parseFloat(volumeEl.value);
+});
+
+function playTrack(i){
+  if(!playlist[i]) return;
+  current = i;
+  audio.src = playlist[i].url;
+  trackNameEl.textContent = (i + 1) + '. ' + playlist[i].name.replace(/\.[^.]+$/,'');
+  trackNameEl.classList.add('animated');
+  audio.play().then(()=>playPauseBtn.textContent='⏸');
+  setupAnalyser();
+  renderList();
+}
+
+audio.addEventListener('ended', ()=>{
+  if(playlist.length>0){
+    if (current < playlist.length - 1) {
+      const idx = current + 1;
+      playTrack(idx);
+    } else {
+      audio.pause();
+      playPauseBtn.textContent = '▶️';
+      current = -1;
+      trackNameEl.textContent = '— трек не играет —';
+      audio.src = '';
+    }
+  } else {
+    playPauseBtn.textContent = '▶️';
+  }
+});
+
+function setupAnalyser(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  const src = audioCtx.createMediaElementSource(audio);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+  const bufferLength = analyser.frequencyBinCount;
+  dataArray = new Uint8Array(bufferLength);
+  src.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  animate();
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(!analyser) return;
+  analyser.getByteFrequencyData(dataArray);
+  drawVisualizer(ctxLeft);
+  drawVisualizer(ctxRight);
+}
+
+function drawVisualizer(ctx){
+  const width = ctx.canvas.width;
+  const height = ctx.canvas.height;
+  const barWidth = width/dataArray.length;
+  ctx.clearRect(0,0,width,height);
+  for(let i=0;i<dataArray.length;i++){
+    const barHeight = dataArray[i]/255*height;
+    ctx.fillStyle = visualizerColors[currentColorIndex];
+    ctx.fillRect(i*barWidth,height-barHeight,barWidth,barHeight);
+  }
+}
+
+// canvas sizes
+canvasLeft.width = canvasLeft.clientWidth;
+canvasLeft.height = canvasLeft.clientHeight;
+canvasRight.width = canvasRight.clientWidth;
+canvasRight.height = canvasRight.clientHeight;
+
+togglePlaylistBtn.addEventListener('click', ()=>{
+  playlistEl.style.width = playlistEl.offsetWidth + 'px';
+  playlistEl.style.visibility = 'hidden';
+  videoContainer.style.display = 'flex';
+  videoContainer.style.maxWidth = '480px';
+});
+
+showPlaylistBtn.addEventListener('click', ()=>{
+  playlistEl.style.visibility = 'visible';
+  playlistEl.style.width = '320px';
+  videoContainer.style.display = 'none';
+});
+
+addVideoBtn.addEventListener('click', ()=>videoInput.click());
+videoInput.addEventListener('change',(e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const url = URL.createObjectURL(f);
+  video.src = url;
+});
+
+changeBothBtn.addEventListener('click', () => {
+  imageInput.click();
+});
+
+imageInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  leftSpeaker.style.backgroundImage = `url(${url})`;
+  rightSpeaker.style.backgroundImage = `url(${url})`;
+  imageInput.value = '';
+});
+</script>
+</body>
+</html>
