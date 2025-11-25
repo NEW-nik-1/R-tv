@@ -4,19 +4,32 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Редактор обложек для ВК</title>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+(async () => { 
+    try { 
+        await vkBridge.send('VKWebAppInit'); 
+        console.log("VK Bridge инициализирован"); 
+    } catch(e){ 
+        console.warn('VK Bridge init failed', e); 
+    } 
+})();
+</script>
+
 <style>
-/* ========== ЧАСТЬ 1: СТИЛИ ========== */
 body {
   margin: 0; padding: 8px; font-family: Arial, sans-serif;
-  background: #111; color: #e0e0e0; display: flex; justify-content: center;
+  background: url("https://raw.githubusercontent.com/NEW-nik-1/R-tv/refs/heads/main/redaktor-jpeg/background-vk.jpg") no-repeat center center fixed;
+  background-size: cover; color: #e0e0e0; display: flex; justify-content: center;
 }
 .container {width: 680px; text-align: center;}
 h2 {font-size: 16px; margin-bottom: 6px;}
-#canvasWrap {padding: 4px; box-shadow: 0 0 4px #999; margin-bottom: 12px;}
+#canvasWrap {padding: 4px; box-shadow: 0 0 4px #999; margin-bottom: 12px; border: 2px solid #ffcc66; border-radius:4px;}
 canvas {
   background: #222; cursor: grab;
-  width: 640px; height: 252px; border-radius: 4px;
+  width: 640px; height: 252px; border-radius: 4px; border: 2px dashed #ffcc66;
 }
 .flex-row, .links-buttons {
   display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; align-items: center; margin-bottom: 12px;
@@ -29,33 +42,14 @@ button, .icon-btn {
 button:hover, .icon-btn:hover {
   background-color: #bdb76b; color: #fff; transform: scale(1.05); box-shadow: 0 0 6px rgba(0,0,0,0.4);
 }
-#scaleControl {
-  width: 640px; display: none; margin-bottom: 12px; justify-content: center; align-items: center;
-}
-.slider-wrapper {
-  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-}
-.author-label {
-  font-size: 11px; color: rgba(180,180,180,0.4); text-decoration: none;
-  display: inline-block; padding: 3px 6px; background: #222; border-radius: 4px; margin-top: 60px;
-}
-#smoothingToggleLabel {
-  font-size: 12px; margin-left: 12px; user-select: none; align-items: center; display: flex; gap: 6px;
-}
-.modal {
-  display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7);
-}
-.modal-content {
-  background-color: #222; margin: 6% auto; padding: 20px; border-radius: 8px;
-  width: 80%; max-width: 640px; color: #ddd; font-size: 14px; line-height: 1.5;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5); text-align: left;
-}
-.modal-content h2 {
-  margin-top: 0; color: #ffcc66;
-}
-.close {
-  color: #aaa; float: right; font-size: 22px; font-weight: bold; cursor: pointer;
-}
+#scaleControl { width: 640px; display: none; margin-bottom: 12px; justify-content: center; align-items: center; }
+.slider-wrapper { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.author-label { font-size: 11px; color: rgba(180,180,180,0.4); text-decoration: none; display: inline-block; padding: 3px 6px; background: #222; border-radius: 4px; margin-top: 60px; }
+#smoothingToggleLabel { font-size: 12px; margin-left: 12px; user-select: none; align-items: center; display: flex; gap: 6px; }
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
+.modal-content { background-color: #222; margin: 6% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 640px; color: #ddd; font-size: 14px; line-height: 1.5; box-shadow: 0 0 10px rgba(0,0,0,0.5); text-align: left; }
+.modal-content h2 { margin-top: 0; color: #ffcc66; }
+.close { color: #aaa; float: right; font-size: 22px; font-weight: bold; cursor: pointer; }
 .close:hover {color: #fff;}
 </style>
 </head>
@@ -97,8 +91,7 @@ button:hover, .icon-btn:hover {
   </div>
 
   <label id="smoothingToggleLabel">
-    <input type="checkbox" id="toggleSmoothing" checked />
-    Включить сглаживание краёв
+    <input type="checkbox" id="toggleSmoothing" checked /> Включить сглаживание краёв
   </label>
 
   <div class="flex-row">
@@ -126,230 +119,228 @@ button:hover, .icon-btn:hover {
     <span class="close">&times;</span>
     <h2>📘 Инструкция по использованию редактора обложек</h2>
     <ol>
-      <li>Загрузка фона и картинок, перемещение и масштабирование.</li>
-      <li>Правый клик на картинке — удалить её.</li>
-      <li>Сохранение текущей области редактора с выбранным размером.</li>
+      <li>Загрузка фона</li>
+      <li>Добавление картинок</li>
+      <li>Перемещение, масштабирование, переворот</li>
+      <li>Удаление правым кликом</li>
+      <li>Сохранение видимой области</li>
     </ol>
   </div>
 </div>
 
 <script>
-/* ========== ЧАСТЬ 2: JS ========== */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-let bgImage = null, images = [], selectedIndex = -1;
-let dragging = false, draggingBg = false, dragOffsetX=0, dragOffsetY=0, dragStartX=0, dragStartY=0;
-let smoothingEnabled = true, bgScale = 1.0, bgPosX = 0, bgPosY = 0;
-let lastOffsetX=40, lastOffsetY=40;
+let bgImage = null;
+let images = [];
+let selectedIndex = -1;
+let dragging = false;
+let dragOffsetX = 0, dragOffsetY = 0;
+let lastOffsetX = 40, lastOffsetY = 40;
+let smoothingEnabled = true;
+let bgScale = 1.0;
+let bgPosX = 0, bgPosY = 0;
+let draggingBg = false, dragStartX = 0, dragStartY = 0;
 
 const scaleControl = document.getElementById("scaleControl");
 const scaleSlider = document.getElementById("scaleSlider");
 const scaleValue = document.getElementById("scaleValue");
 const decreaseBtn = document.getElementById("decrease");
 const increaseBtn = document.getElementById("increase");
-const flipHoriz = document.getElementById("flipHoriz");
+const flipCheckbox = document.getElementById("flipHoriz");
 const bgScaleSlider = document.getElementById("bgScaleSlider");
 const bgScaleValue = document.getElementById("bgScaleValue");
 const bgScaleDecrease = document.getElementById("bgScaleDecrease");
 const bgScaleIncrease = document.getElementById("bgScaleIncrease");
-const helpBtn = document.getElementById("helpBtn");
-const helpModal = document.getElementById("helpModal");
-const closeBtn = document.querySelector(".modal .close");
 
 class ImageObject {
-  constructor(img,x=0,y=0){
-    this.img=img; this.x=x; this.y=y;
-    this.width=200; this.height=(200*img.height)/img.width;
-    this.flip=false;
-  }
+    constructor(img, x=0, y=0) {
+        this.img = img;
+        this.x = x;
+        this.y = y;
+        this.width = 200;
+        this.height = (200*img.height)/img.width;
+        this.flip = false;
+    }
 }
 
-function drawImageWithSmoothEdges(ctx,imgObj){
-  const tmpCanvas=document.createElement("canvas");
-  tmpCanvas.width=imgObj.width; tmpCanvas.height=imgObj.height;
-  const tmpCtx=tmpCanvas.getContext("2d");
-  tmpCtx.imageSmoothingEnabled=smoothingEnabled;
-  tmpCtx.clearRect(0,0,tmpCanvas.width,tmpCanvas.height);
-  tmpCtx.drawImage(imgObj.img,0,0,imgObj.width,imgObj.height);
-  ctx.save();
-  ctx.translate(imgObj.x+imgObj.width/2,imgObj.y+imgObj.height/2);
-  ctx.scale(imgObj.flip?-1:1,1);
-  ctx.drawImage(tmpCanvas,-imgObj.width/2,-imgObj.height/2);
-  ctx.restore();
+function drawImageWithSmoothEdges(ctx, imgObj) {
+    const tmpCanvas = document.createElement("canvas");
+    tmpCanvas.width = imgObj.width;
+    tmpCanvas.height = imgObj.height;
+    const tmpCtx = tmpCanvas.getContext("2d");
+    tmpCtx.imageSmoothingEnabled = smoothingEnabled;
+    tmpCtx.imageSmoothingQuality = smoothingEnabled ? "high" : "low";
+    tmpCtx.clearRect(0,0,tmpCanvas.width,tmpCanvas.height);
+    tmpCtx.drawImage(imgObj.img,0,0,imgObj.width,imgObj.height);
+    if(smoothingEnabled){
+        let gradient = tmpCtx.createLinearGradient(0,0,tmpCanvas.width,0);
+        const fadeWidth = Math.min(30,tmpCanvas.width/4);
+        gradient.addColorStop(0,"rgba(0,0,0,0)");
+        gradient.addColorStop(fadeWidth/tmpCanvas.width,"rgba(0,0,0,1)");
+        gradient.addColorStop(1-fadeWidth/tmpCanvas.width,"rgba(0,0,0,1)");
+        gradient.addColorStop(1,"rgba(0,0,0,0)");
+        tmpCtx.globalCompositeOperation = "destination-in";
+        tmpCtx.fillStyle = gradient;
+        tmpCtx.fillRect(0,0,tmpCanvas.width,tmpCanvas.height);
+        tmpCtx.globalCompositeOperation = "source-over";
+    }
+    ctx.save();
+    ctx.translate(imgObj.x + imgObj.width/2, imgObj.y + imgObj.height/2);
+    ctx.scale(imgObj.flip ? -1 : 1, 1);
+    ctx.drawImage(tmpCanvas,-imgObj.width/2,-imgObj.height/2);
+    ctx.restore();
 }
 
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(bgImage) ctx.drawImage(bgImage,bgPosX,bgPosY,bgImage.width*bgScale,bgImage.height*bgScale);
-  images.forEach(img=>drawImageWithSmoothEdges(ctx,img));
+function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(bgImage){
+        const w = bgImage.width*bgScale;
+        const h = bgImage.height*bgScale;
+        ctx.drawImage(bgImage,bgPosX,bgPosY,w,h);
+    }
+    images.forEach(img=>drawImageWithSmoothEdges(ctx,img));
 }
 
-// ====== Загрузка фона ======
-document.getElementById("loadBgBtn").onclick = ()=> document.getElementById("bgFile").click();
-document.getElementById("bgFile").addEventListener("change",(e)=>{
-  const f=e.target.files[0];
-  if(!f) return;
-  const img=new Image();
-  img.onload=()=>{
-    bgImage=img;
-    bgPosX=(canvas.width-bgImage.width)/2;
-    bgPosY=(canvas.height-bgImage.height)/2;
-    bgScale=1.0;
-    bgScaleSlider.value=100;
-    bgScaleValue.textContent="100%";
-    draw();
-  };
-  img.src=URL.createObjectURL(f);
-});
-
-// ====== Загрузка картинок ======
 function addImage(input){
-  const f=input.files[0]; if(!f) return;
-  const img=new Image();
-  img.onload=()=>{
-    lastOffsetX+=20; lastOffsetY+=20;
-    if(lastOffsetX>canvas.width-200) lastOffsetX=40;
-    if(lastOffsetY>canvas.height-200) lastOffsetY=40;
-    const imgObj=new ImageObject(img,lastOffsetX,lastOffsetY);
-    images.push(imgObj);
-    selectedIndex=images.length-1;
-    scaleControl.style.display="flex";
+    const f = input.files[0]; if(!f) return;
+    const img = new Image();
+    img.onload = ()=>{
+        lastOffsetX+=20; lastOffsetY+=20;
+        if(lastOffsetX>canvas.width-200) lastOffsetX=40;
+        if(lastOffsetY>canvas.height-200) lastOffsetY=40;
+        const obj = new ImageObject(img,lastOffsetX,lastOffsetY);
+        images.push(obj); selectedIndex=images.length-1;
+        updateScaleControl(obj); draw();
+    }
+    img.src = URL.createObjectURL(f);
+    input.value="";
+}
+
+function updateScaleControl(imgObj){
     scaleSlider.value=imgObj.width;
     scaleValue.textContent=imgObj.width;
-    flipHoriz.checked=imgObj.flip;
-    draw();
-  };
-  img.src=URL.createObjectURL(f);
-  input.value="";
+    flipCheckbox.checked=imgObj.flip;
+    scaleControl.style.display="flex";
 }
-document.getElementById("addImg1Btn").onclick=()=>document.getElementById("addImgFile1").click();
-document.getElementById("addImg2Btn").onclick=()=>document.getElementById("addImgFile2").click();
-document.getElementById("addImgFile1").addEventListener("change",(e)=>addImage(e.target));
-document.getElementById("addImgFile2").addEventListener("change",(e)=>addImage(e.target));
 
-// ====== Перетаскивание ======
-canvas.addEventListener("mousedown",(e)=>{
-  const rect=canvas.getBoundingClientRect();
-  const mouseX=e.clientX-rect.left, mouseY=e.clientY-rect.top;
-  dragging=false; draggingBg=false;
+// --- Загрузка ---
+document.getElementById("loadBgBtn").onclick = ()=>document.getElementById("bgFile").click();
+document.getElementById("bgFile").addEventListener("change",e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const img = new Image();
+    img.onload = ()=>{
+        bgImage=img;
+        bgPosX=(canvas.width-bgImage.width)/2;
+        bgPosY=(canvas.height-bgImage.height)/2;
+        bgScale=1.0;
+        bgScaleSlider.value=100; bgScaleValue.textContent="100%";
+        draw();
+    }
+    img.src=URL.createObjectURL(f);
+});
+document.getElementById("addImg1Btn").onclick = ()=>document.getElementById("addImgFile1").click();
+document.getElementById("addImg2Btn").onclick = ()=>document.getElementById("addImgFile2").click();
+document.getElementById("addImgFile1").addEventListener("change",e=>addImage(e.target));
+document.getElementById("addImgFile2").addEventListener("change",e=>addImage(e.target));
 
-  for(let i=images.length-1;i>=0;i--){
-    const img=images[i];
-    if(mouseX>=img.x && mouseX<=img.x+img.width && mouseY>=img.y && mouseY<=img.y+img.height){
-      selectedIndex=i;
-      dragOffsetX=mouseX-img.x;
-      dragOffsetY=mouseY-img.y;
-      dragging=true;
-      scaleSlider.value=img.width; scaleValue.textContent=img.width; flipHoriz.checked=img.flip;
-      draw();
-      return;
+// --- Перетаскивание ---
+canvas.addEventListener("mousedown",e=>{
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX-rect.left;
+    const mouseY = e.clientY-rect.top;
+    dragging=false;
+    for(let i=images.length-1;i>=0;i--){
+        const img=images[i];
+        if(mouseX>=img.x && mouseX<=img.x+img.width && mouseY>=img.y && mouseY<=img.y+img.height){
+            selectedIndex=i; dragOffsetX=mouseX-img.x; dragOffsetY=mouseY-img.y;
+            dragging=true; updateScaleControl(img); draw(); return;
+        }
     }
-  }
-  if(bgImage){
-    const scaledWidth=bgImage.width*bgScale, scaledHeight=bgImage.height*bgScale;
-    if(mouseX>=bgPosX && mouseX<=bgPosX+scaledWidth && mouseY>=bgPosY && mouseY<=bgPosY+scaledHeight){
-      draggingBg=true;
-      dragStartX=mouseX-bgPosX;
-      dragStartY=mouseY-bgPosY;
-      return;
+    if(bgImage){
+        const w=bgImage.width*bgScale; const h=bgImage.height*bgScale;
+        if(mouseX>=bgPosX && mouseX<=bgPosX+w && mouseY>=bgPosY && mouseY<=bgPosY+h){
+            draggingBg=true; dragStartX=mouseX-bgPosX; dragStartY=mouseY-bgPosY;
+            return;
+        }
     }
-  }
+});
+canvas.addEventListener("mousemove",e=>{
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX-rect.left;
+    const mouseY = e.clientY-rect.top;
+    if(draggingBg){ bgPosX=mouseX-dragStartX; bgPosY=mouseY-dragStartY; draw(); }
+    else if(dragging && selectedIndex>=0){ 
+        images[selectedIndex].x=mouseX-dragOffsetX; images[selectedIndex].y=mouseY-dragOffsetY; draw(); 
+    }
+});
+window.addEventListener("mouseup",()=>{ dragging=false; draggingBg=false; });
+
+// --- Удаление ---
+canvas.addEventListener("contextmenu",e=>{
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const mouseX=e.clientX-rect.left;
+    const mouseY=e.clientY-rect.top;
+    for(let i=images.length-1;i>=0;i--){
+        const img=images[i];
+        if(mouseX>=img.x && mouseX<=img.x+img.width && mouseY>=img.y && mouseY<=img.y+img.height){
+            images.splice(i,1);
+            if(images.length>0){ selectedIndex=images.length-1; updateScaleControl(images[selectedIndex]); }
+            else { selectedIndex=-1; scaleControl.style.display="none"; }
+            draw(); return;
+        }
+    }
 });
 
-canvas.addEventListener("mousemove",(e)=>{
-  const rect=canvas.getBoundingClientRect();
-  const mouseX=e.clientX-rect.left, mouseY=e.clientY-rect.top;
-  if(dragging && selectedIndex>=0){
-    images[selectedIndex].x=mouseX-dragOffsetX;
-    images[selectedIndex].y=mouseY-dragOffsetY;
-    draw();
-  } else if(draggingBg){
-    bgPosX=mouseX-dragStartX;
-    bgPosY=mouseY-dragStartY;
-    draw();
-  }
-});
-
-window.addEventListener("mouseup",()=>{dragging=false; draggingBg=false;});
-
-// ====== Удаление правым кликом ======
-canvas.addEventListener("contextmenu",(e)=>{
-  e.preventDefault();
-  const rect=canvas.getBoundingClientRect();
-  const mouseX=e.clientX-rect.left, mouseY=e.clientY-rect.top;
-  for(let i=images.length-1;i>=0;i--){
-    const img=images[i];
-    if(mouseX>=img.x && mouseX<=img.x+img.width && mouseY>=img.y && mouseY<=img.y+img.height){
-      images.splice(i,1);
-      if(images.length>0){ selectedIndex=images.length-1; scaleSlider.value=images[selectedIndex].width; scaleValue.textContent=images[selectedIndex].width; flipHoriz.checked=images[selectedIndex].flip;}
-      else {selectedIndex=-1; scaleControl.style.display="none";}
-      draw();
-      return;
-    }
-  }
-});
-
-// ====== Масштаб и переворот выбранной картинки ======
+// --- Масштаб и переворот ---
 function updateImageSize(width){
-  if(selectedIndex>=0){
-    const imgObj=images[selectedIndex];
-    imgObj.width=width;
-    imgObj.height=(width*imgObj.img.height)/imgObj.img.width;
-    scaleSlider.value=width;
-    scaleValue.textContent=width;
-    draw();
-  }
+    if(selectedIndex>=0){
+        const imgObj=images[selectedIndex];
+        imgObj.width=width; imgObj.height=(width*imgObj.img.height)/imgObj.img.width;
+        scaleSlider.value=width; scaleValue.textContent=width; draw();
+    }
 }
 scaleSlider.addEventListener("input",()=>updateImageSize(parseInt(scaleSlider.value)));
 decreaseBtn.addEventListener("click",()=>updateImageSize(Math.max(50,parseInt(scaleSlider.value)-10)));
 increaseBtn.addEventListener("click",()=>updateImageSize(Math.min(500,parseInt(scaleSlider.value)+10)));
-flipHoriz.addEventListener("change",()=>{if(selectedIndex>=0){images[selectedIndex].flip=flipHoriz.checked; draw();}});
+flipCheckbox.addEventListener("change",()=>{ if(selectedIndex>=0){ images[selectedIndex].flip=flipCheckbox.checked; draw(); }});
+document.getElementById("toggleSmoothing").addEventListener("change",()=>{ smoothingEnabled=document.getElementById("toggleSmoothing").checked; draw(); });
 
-// ====== Сглаживание ======
-document.getElementById("toggleSmoothing").addEventListener("change",(e)=>{smoothingEnabled=e.target.checked; draw();});
+// --- Масштаб фона ---
+bgScaleSlider.addEventListener("input",()=>{ bgScale=bgScaleSlider.value/100; bgScaleValue.textContent=Math.round(bgScale*100)+"%"; draw(); });
+bgScaleDecrease.addEventListener("click",()=>{ bgScale=Math.max(0.5,bgScale-0.1); bgScaleSlider.value=bgScale*100; bgScaleValue.textContent=Math.round(bgScale*100)+"%"; draw(); });
+bgScaleIncrease.addEventListener("click",()=>{ bgScale=Math.min(5,bgScale+0.1); bgScaleSlider.value=bgScale*100; bgScaleValue.textContent=Math.round(bgScale*100)+"%"; draw(); });
 
-// ====== Масштаб фона ======
-bgScaleSlider.addEventListener("input",()=>{bgScale=bgScaleSlider.value/100; bgScaleValue.textContent=Math.round(bgScale*100)+"%"; draw();});
-bgScaleDecrease.addEventListener("click",()=>{bgScale=Math.max(0.5,bgScale-0.1); bgScaleSlider.value=bgScale*100; bgScaleValue.textContent=Math.round(bgScale*100)+"%"; draw();});
-bgScaleIncrease.addEventListener("click",()=>{bgScale=Math.min(3,bgScale+0.1); bgScaleSlider.value=bgScale*100; bgScaleValue.textContent=Math.round(bgScale*100)+"%"; draw();});
+// --- Сохранение ---
+document.getElementById("saveImageBtn").addEventListener("click",()=>{
+    const width = parseInt(document.getElementById("widthInput").value);
+    const height = parseInt(document.getElementById("heightInput").value);
+    const format = document.getElementById("formatSelect").value;
+    const tmpCanvas = document.createElement("canvas");
+    tmpCanvas.width=width; tmpCanvas.height=height;
+    const tmpCtx = tmpCanvas.getContext("2d");
+    tmpCtx.imageSmoothingEnabled = smoothingEnabled;
+    tmpCtx.imageSmoothingQuality = smoothingEnabled ? "high" : "low";
+    tmpCtx.drawImage(canvas,0,0,width,height);
+    tmpCanvas.toBlob(blob=>{
+        const a = document.createElement("a");
+        a.href=URL.createObjectURL(blob);
+        a.download="cover."+format;
+        a.click();
+    }, "image/"+format);
+});
 
-// ====== Сохранение ======
-document.getElementById("saveImageBtn").onclick=()=>{
-  const format=document.getElementById("formatSelect").value;
-  let width=parseInt(document.getElementById("widthInput").value);
-  let height=parseInt(document.getElementById("heightInput").value);
-  if(isNaN(width)||width<100) width=1920;
-  if(isNaN(height)||height<100) height=768;
+// --- Модалка инструкции ---
+const modal = document.getElementById("helpModal");
+const helpBtn = document.getElementById("helpBtn");
+const closeSpan = document.querySelector(".close");
+helpBtn.onclick = ()=>{ modal.style.display="block"; };
+closeSpan.onclick = ()=>{ modal.style.display="none"; };
+window.onclick = e=>{ if(e.target==modal) modal.style.display="none"; };
 
-  const tmpCanvas=document.createElement("canvas");
-  tmpCanvas.width=width; tmpCanvas.height=height;
-  const tmpCtx=tmpCanvas.getContext("2d");
-
-  if(bgImage) tmpCtx.drawImage(bgImage,bgPosX/bgScale*width/canvas.width,bgPosY/bgScale*height/canvas.height,bgImage.width*width/canvas.width,bgImage.height*height/canvas.height);
-
-  images.forEach(img=>{
-    const scaleX=width/canvas.width, scaleY=height/canvas.height;
-    tmpCtx.save();
-    tmpCtx.translate((img.x+img.width/2)*scaleX,(img.y+img.height/2)*scaleY);
-    tmpCtx.scale(img.flip?-1:1,1);
-    tmpCtx.imageSmoothingEnabled=smoothingEnabled;
-    tmpCtx.drawImage(img.img,-img.width/2*scaleX,-img.height/2*scaleY,img.width*scaleX,img.height*scaleY);
-    tmpCtx.restore();
-  });
-
-  tmpCanvas.toBlob(blob=>{
-    const link=document.createElement("a");
-    link.href=URL.createObjectURL(blob);
-    link.download="cover."+format;
-    link.click();
-  },'image/'+format);
-};
-
-// ====== Модальное окно помощи ======
-helpBtn.onclick=()=>{helpModal.style.display="block";};
-closeBtn.onclick=()=>{helpModal.style.display="none";};
-window.onclick=(e)=>{if(e.target==helpModal) helpModal.style.display="none";}
+draw();
 </script>
 </body>
 </html>
