@@ -47,10 +47,17 @@ button:hover, .icon-btn:hover {
 .author-label { font-size: 11px; color: rgba(180,180,180,0.4); text-decoration: none; display: inline-block; padding: 3px 6px; background: #222; border-radius: 4px; margin-top: 60px; }
 #smoothingToggleLabel { font-size: 12px; margin-left: 12px; user-select: none; align-items: center; display: flex; gap: 6px; }
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
-.modal-content { background-color: #222; margin: 6% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 640px; color: #ddd; font-size: 14px; line-height: 1.5; box-shadow: 0 0 10px rgba(0,0,0,0.5); text-align: left; }
-.modal-content h2 { margin-top: 0; color: #ffcc66; }
-.close { color: #aaa; float: right; font-size: 22px; font-weight: bold; cursor: pointer; }
+.modal-content {
+  background-color: #222; margin: 6% auto; padding: 20px; border-radius: 8px; width: 80%; max-width: 640px; color: #ddd; font-size: 14px; line-height: 1.5; box-shadow: 0 0 10px rgba(0,0,0,0.5); text-align: left; display: flex; flex-direction: column; gap: 12px;
+}
+.modal-content h2 { margin-top: 0; color: #ffcc66; text-align: center; }
+.close { color: #aaa; align-self: flex-end; font-size: 28px; font-weight: bold; cursor: pointer; }
 .close:hover {color: #fff;}
+video {
+  width: 100%;
+  border-radius: 4px;
+  background-color: black;
+}
 </style>
 </head>
 <body>
@@ -114,10 +121,15 @@ button:hover, .icon-btn:hover {
   <div><a class="author-label" href="https://vk.com/muzer_play" target="_blank"><i class="fa-solid fa-user"></i> Автор: MUZER play + ( ChatGPT )</a></div>
 </div>
 
+<!-- Модальное окно инструкции с видео -->
 <div id="helpModal" class="modal">
   <div class="modal-content">
-    <span class="close">&times;</span>
-    <h2>📘 Инструкция по использованию редактора обложек</h2>
+    <span class="close" id="closeModal">&times;</span>
+    <h2>Инструкция по использованию редактора</h2>
+    <video controls>
+      <source src="your-video-file.mp4" type="video/mp4" />
+      Ваш браузер не поддерживает просмотр видео.
+    </video>
     <ol>
       <li>Загрузка фона</li>
       <li>Добавление картинок</li>
@@ -335,10 +347,18 @@ document.getElementById("saveImageBtn").addEventListener("click",()=>{
 // --- Модалка инструкции ---
 const modal = document.getElementById("helpModal");
 const helpBtn = document.getElementById("helpBtn");
-const closeSpan = document.querySelector(".close");
-helpBtn.onclick = ()=>{ modal.style.display="block"; };
-closeSpan.onclick = ()=>{ modal.style.display="none"; };
-window.onclick = e=>{ if(e.target==modal) modal.style.display="none"; };
+const closeSpan = document.getElementById("closeModal");
+const video = modal.querySelector("video");
+
+function closeModalFunction(){
+  modal.style.display = "none";
+  video.pause();
+  video.currentTime = 0;
+}
+
+helpBtn.onclick = () => { modal.style.display = "block"; };
+closeSpan.onclick = closeModalFunction;
+window.onclick = e => { if (e.target === modal) closeModalFunction(); };
 
 draw();
 </script>
