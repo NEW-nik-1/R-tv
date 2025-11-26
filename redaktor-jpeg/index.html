@@ -331,15 +331,25 @@ document.getElementById("saveImageBtn").addEventListener("click",()=>{
     const height = parseInt(document.getElementById("heightInput").value);
     const format = document.getElementById("formatSelect").value;
     const tmpCanvas = document.createElement("canvas");
-    tmpCanvas.width=width; tmpCanvas.height=height;
+    tmpCanvas.width=width;
+    tmpCanvas.height=height;
     const tmpCtx = tmpCanvas.getContext("2d");
     tmpCtx.imageSmoothingEnabled = smoothingEnabled;
     tmpCtx.imageSmoothingQuality = smoothingEnabled ? "high" : "low";
-    tmpCtx.drawImage(canvas,0,0,width,height);
+    tmpCtx.drawImage(canvas, 0, 0, width, height);
+
+    // Добавляем белый полупрозрачный водяной знак внизу справа
+    const text = ".Редактор обложек для вк.";
+    tmpCtx.font = "20px Arial";
+    tmpCtx.fillStyle = "rgba(255, 255, 255, 0.2)"; // прозрачный белый текст
+    tmpCtx.textAlign = "right";
+    tmpCtx.textBaseline = "bottom";
+    tmpCtx.fillText(text, width - 10, height - 10);
+
     tmpCanvas.toBlob(blob=>{
         const a = document.createElement("a");
-        a.href=URL.createObjectURL(blob);
-        a.download="cover."+format;
+        a.href = URL.createObjectURL(blob);
+        a.download = "cover."+format;
         a.click();
     }, "image/"+format);
 });
